@@ -1,0 +1,12 @@
+# -*- mode: org; fill-column: 78; -*-
+# Time-stamp: <2023-10-24 22:41:54 krylon>
+#
+#+TAGS: go(g) internals(i) ui(u) bug(b) feature(f)
+#+TAGS: database(d) design(e), meditation(m)
+#+TAGS: optimize(o) refactor(r) cleanup(c)
+#+TODO: TODO(t)  RESEARCH(r) IMPLEMENT(i) TEST(e) | DONE(d) FAILED(f) CANCELLED(c)
+#+TODO: MEDITATE(m) PLANNING(p) | SUSPENDED(s)
+#+PRIORITIES: A G D
+
+* Vox
+  Vox is an audio book reader that saves your listening progress.
