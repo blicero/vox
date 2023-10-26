@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-10-24 22:51:40 krylon>
+# Time-stamp: <2023-10-26 18:04:06 krylon>
 #
 # /data/code/python/vox/common.py
 # created on 24. 10. 2023
@@ -17,6 +17,7 @@ vox.common
 """
 
 import logging
+import logging.handlers
 import os
 from typing import Final
 from threading import Lock
