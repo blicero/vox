@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-10-26 23:58:57 krylon>
+# Time-stamp: <2023-10-27 14:30:41 krylon>
 #
 # /data/code/python/vox/test_data.py
 # created on 26. 10. 2023
@@ -26,12 +26,11 @@ from vox.data import File
 class FileCreateTestData(NamedTuple):
     """Data for a single test of File creation"""
     args: dict[str, Any]
-    expect_none: bool
     expect_error: bool
 
 
 create_test_cases: list[FileCreateTestData] = [
-    FileCreateTestData({}, False, False),
+    FileCreateTestData({}, False),
     FileCreateTestData(
         {
             "file_id": 23,
@@ -40,13 +39,17 @@ create_test_cases: list[FileCreateTestData] = [
             "disc_no": 42,
             "timestamp": datetime.now(),
         },
-        False,
         False),
     FileCreateTestData(
         {
             "file_id": "Karl",
         },
         True,
+    ),
+    FileCreateTestData(
+        {
+            "position": -25,
+        },
         True,
     ),
 ]
@@ -59,7 +62,7 @@ class FileTest(unittest.TestCase):
         """Test creating File objects"""
         for c in create_test_cases:  # pylint: disable-msg=C0103
             if c.expect_error:
-                with self.assertRaises(Exception):  # noqa: B017
+                with self.assertRaises(AssertionError):
                     t = File(**c.args)  # pylint: disable-msg=C0103
                     self.assertIsNone(t)
 
