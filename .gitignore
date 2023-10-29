@@ -1,5 +1,5 @@
 # Binaries for programs and plugins
-# Time-stamp: <2023-10-24 22:39:50 krylon>
+# Time-stamp: <2023-10-29 18:16:53 krylon>
 *.exe
 *.dll
 *.so
@@ -28,4 +28,5 @@ __pycache__
 *.bin
 *.dat
 
+monkeytype.sqlite3
 
