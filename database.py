@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-10-28 23:35:37 krylon>
+# Time-stamp: <2023-10-29 16:45:43 krylon>
 #
 # /data/code/python/vox/database.py
 # created on 28. 10. 2023
@@ -100,19 +100,66 @@ class query_id(Enum):
 
 
 db_queries: Final[dict[query_id, str]] = {
-    query_id.ProgramAdd:        "INSERT INTO program (title, creator) VALUES (?, ?)",
+    query_id.ProgramAdd:        """
+    INSERT INTO program (title, creator)
+                 VALUES (?,     ?)""",
     query_id.ProgramDel:        "DELETE FROM program WHERE id = ?",
-    query_id.ProgramGetAll:     "SELECT id, title, creator, url, cur_file FROM program",
-    query_id.ProgramGetByID:    "SELECT title, creator, url, cur_file FROM program WHERE id = ?",
-    query_id.ProgramGetByTitle: "SELECT id, creator, url, cur_file FROM program WHERE title = ?",
+    query_id.ProgramGetAll:     """
+    SELECT
+        id,
+        title,
+        creator,
+        url,
+        cur_file
+    FROM program""",
+    query_id.ProgramGetByID:    """
+    SELECT
+        title,
+        creator,
+        url,
+        cur_file
+    FROM program
+    WHERE id = ?""",
+    query_id.ProgramGetByTitle: """
+    SELECT
+        id,
+        creator,
+        url,
+        cur_file
+    FROM program
+    WHERE title = ?""",
     query_id.ProgramSetTitle:   "UPDATE program SET title = ? WHERE id = ?",
     query_id.ProgramSetCreator: "UPDATE program SET creator = ? WHERE id = ?",
     query_id.ProgramSetURL:     "UPDATE program SET url = ? WHERE id = ?",
     query_id.ProgramSetCurFile: "UPDATE program SET cur_file = ? WHERE id = ?",
-    query_id.FileAdd:           "INSERT INTO file (path, folder_id, ord1, ord2) VALUES (?, ?, ?, ?)",
+    query_id.FileAdd:           """
+    INSERT INTO file (path, folder_id, ord1, ord2)
+              VALUES (?,    ?,         ?,    ?)""",
     query_id.FileDel:           "DELETE FROM file WHERE id = ?",
-    query_id.FileGetByID:       "SELECT COALESCE(program_id, 0), folder_id, path, title, position, last_played, ord1, ord2 FROM file WHERE id = ?",
-    query_id.FileGetByPath:     "SELECT id, COALESCE(program_id, 0), folder_id, title, position, last_played, ord1, ord2 FROM file WHERE path = ?",
+    query_id.FileGetByID:       """
+    SELECT
+        COALESCE(program_id, 0),
+        folder_id,
+        path,
+        title,
+        position,
+        last_played,
+        ord1,
+        ord2
+    FROM file
+    WHERE id = ?""",
+    query_id.FileGetByPath:     """
+    SELECT
+        id,
+        COALESCE(program_id, 0),
+        folder_id,
+        title,
+        position,
+        last_played,
+        ord1,
+        ord2
+    FROM file
+    WHERE path = ?""",
     query_id.FileGetByProgram: """
 SELECT
     id,
@@ -143,13 +190,31 @@ WHERE program_id IS NULL
 ORDER BY ord1, ord2, title, path ASC
 """,
     query_id.FileSetTitle:     "UPDATE file SET title = ? WHERE id = ?",
-    query_id.FileSetPosition:  "UPDATE file SET position = ?, last_played = ? WHERE id = ?",
+    query_id.FileSetPosition:  """
+    UPDATE file SET
+        position = ?,
+        last_played = ?
+    WHERE id = ?""",
     query_id.FileSetProgram:   "UPDATE file SET program_id = ? WHERE id = ?",
-    query_id.FileSetOrd:       "UPDATE file SET ord1 = ?, ord2 = ? WHERE id = ?",
+    query_id.FileSetOrd:       """
+    UPDATE file SET
+        ord1 = ?,
+        ord2 = ?
+    WHERE id = ?""",
     query_id.FolderAdd:        "INSERT INTO folder (path) VALUES (?)",
     query_id.FolderGetAll:     "SELECT id, path, last_scan FROM folder",
-    query_id.FolderGetByPath:  "SELECT id, last_scan FROM folder WHERE path = ?",
-    query_id.FolderGetByID:    "SELECT path, last_scan FROM folder WHERE id = ?",
+    query_id.FolderGetByPath:  """
+    SELECT
+        id,
+        last_scan
+    FROM folder
+    WHERE path = ?""",
+    query_id.FolderGetByID:    """
+    SELECT
+        path,
+        last_scan
+    FROM folder
+    WHERE id = ?""",
     query_id.FolderUpdateScan: "UPDATE folder SET last_scan = ? WHERE id = ?",
 }
 
