@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2023-10-28 23:44:56 krylon>
+# Time-stamp: <2023-10-29 18:56:02 krylon>
 #
 #+TAGS: go(g) internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -12,13 +12,13 @@
   Vox is an audio book reader that saves your listening progress.
 * Clocktable
   #+BEGIN: clocktable :scope file :maxlevel 202 :emphasize t
-  #+CAPTION: Clock summary at [2023-10-28 Sa 23:44]
+  #+CAPTION: Clock summary at [2023-10-29 So 18:56]
   | Headline             | Time   |        |      |
   |----------------------+--------+--------+------|
-  | *Total time*         | *4:15* |        |      |
+  | *Total time*         | *6:35* |        |      |
   |----------------------+--------+--------+------|
-  | *Components [0/0]*   | *4:15* |        |      |
-  | \_  /Database [0/1]/ |        | /4:15/ |      |
+  | *Components [0/0]*   | *6:35* |        |      |
+  | \_  /Database [0/1]/ |        | /6:35/ |      |
   | \_    Data types     |        |        | 1:28 |
   #+END:
 * Components [0/0]
@@ -32,6 +32,7 @@
    :VISIBILITY: children
    :END:
    :LOGBOOK:
+   CLOCK: [2023-10-29 So 16:35]--[2023-10-29 So 18:55] =>  2:20
    CLOCK: [2023-10-28 Sa 21:15]--[2023-10-28 Sa 23:44] =>  2:29
    CLOCK: [2023-10-28 Sa 15:47]--[2023-10-28 Sa 16:05] =>  0:18
    :END:
