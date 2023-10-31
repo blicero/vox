@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-10-27 14:30:41 krylon>
+# Time-stamp: <2023-10-31 19:47:52 krylon>
 #
 # /data/code/python/vox/test_data.py
 # created on 26. 10. 2023
@@ -34,6 +34,7 @@ create_test_cases: list[FileCreateTestData] = [
     FileCreateTestData(
         {
             "file_id": 23,
+            "folder_id": 1,
             "program_id": 90,
             "title": "Wer das liest, ist doof",
             "disc_no": 42,
@@ -62,7 +63,7 @@ class FileTest(unittest.TestCase):
         """Test creating File objects"""
         for c in create_test_cases:  # pylint: disable-msg=C0103
             if c.expect_error:
-                with self.assertRaises(AssertionError):
+                with self.assertRaises((AssertionError, ValueError)):
                     t = File(**c.args)  # pylint: disable-msg=C0103
                     self.assertIsNone(t)
 

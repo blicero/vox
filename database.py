@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-10-29 16:45:43 krylon>
+# Time-stamp: <2023-10-31 19:49:30 krylon>
 #
 # /data/code/python/vox/database.py
 # created on 28. 10. 2023
@@ -68,10 +68,11 @@ CREATE TABLE file (
     "CREATE INDEX file_ord_index ON file (ord1, ord2)",
 ]
 
-open_lock: Final[threading.Lock] = threading.Lock()
+OPEN_LOCK: Final[threading.Lock] = threading.Lock()
 
 
-class query_id(Enum):
+# pylint: disable-msg=C0103
+class QueryID(Enum):
     """Provides symbolic constants for database queries"""
     ProgramAdd = auto()
     ProgramDel = auto()
@@ -99,12 +100,12 @@ class query_id(Enum):
     FolderUpdateScan = auto()
 
 
-db_queries: Final[dict[query_id, str]] = {
-    query_id.ProgramAdd:        """
+db_queries: Final[dict[QueryID, str]] = {
+    QueryID.ProgramAdd:        """
     INSERT INTO program (title, creator)
                  VALUES (?,     ?)""",
-    query_id.ProgramDel:        "DELETE FROM program WHERE id = ?",
-    query_id.ProgramGetAll:     """
+    QueryID.ProgramDel:        "DELETE FROM program WHERE id = ?",
+    QueryID.ProgramGetAll:     """
     SELECT
         id,
         title,
@@ -112,7 +113,7 @@ db_queries: Final[dict[query_id, str]] = {
         url,
         cur_file
     FROM program""",
-    query_id.ProgramGetByID:    """
+    QueryID.ProgramGetByID:    """
     SELECT
         title,
         creator,
@@ -120,7 +121,7 @@ db_queries: Final[dict[query_id, str]] = {
         cur_file
     FROM program
     WHERE id = ?""",
-    query_id.ProgramGetByTitle: """
+    QueryID.ProgramGetByTitle: """
     SELECT
         id,
         creator,
@@ -128,15 +129,15 @@ db_queries: Final[dict[query_id, str]] = {
         cur_file
     FROM program
     WHERE title = ?""",
-    query_id.ProgramSetTitle:   "UPDATE program SET title = ? WHERE id = ?",
-    query_id.ProgramSetCreator: "UPDATE program SET creator = ? WHERE id = ?",
-    query_id.ProgramSetURL:     "UPDATE program SET url = ? WHERE id = ?",
-    query_id.ProgramSetCurFile: "UPDATE program SET cur_file = ? WHERE id = ?",
-    query_id.FileAdd:           """
+    QueryID.ProgramSetTitle:   "UPDATE program SET title = ? WHERE id = ?",
+    QueryID.ProgramSetCreator: "UPDATE program SET creator = ? WHERE id = ?",
+    QueryID.ProgramSetURL:     "UPDATE program SET url = ? WHERE id = ?",
+    QueryID.ProgramSetCurFile: "UPDATE program SET cur_file = ? WHERE id = ?",
+    QueryID.FileAdd:           """
     INSERT INTO file (path, folder_id, ord1, ord2)
               VALUES (?,    ?,         ?,    ?)""",
-    query_id.FileDel:           "DELETE FROM file WHERE id = ?",
-    query_id.FileGetByID:       """
+    QueryID.FileDel:           "DELETE FROM file WHERE id = ?",
+    QueryID.FileGetByID:       """
     SELECT
         COALESCE(program_id, 0),
         folder_id,
@@ -148,7 +149,7 @@ db_queries: Final[dict[query_id, str]] = {
         ord2
     FROM file
     WHERE id = ?""",
-    query_id.FileGetByPath:     """
+    QueryID.FileGetByPath:     """
     SELECT
         id,
         COALESCE(program_id, 0),
@@ -160,7 +161,7 @@ db_queries: Final[dict[query_id, str]] = {
         ord2
     FROM file
     WHERE path = ?""",
-    query_id.FileGetByProgram: """
+    QueryID.FileGetByProgram: """
 SELECT
     id,
     folder_id,
@@ -175,7 +176,7 @@ FROM file
 WHERE program_id = ?
 ORDER BY ord1, ord2, title, path ASC
 """,
-    query_id.FileGetNoProgram: """
+    QueryID.FileGetNoProgram: """
 SELECT
     id,
     folder_id,
@@ -189,33 +190,33 @@ FROM file
 WHERE program_id IS NULL
 ORDER BY ord1, ord2, title, path ASC
 """,
-    query_id.FileSetTitle:     "UPDATE file SET title = ? WHERE id = ?",
-    query_id.FileSetPosition:  """
+    QueryID.FileSetTitle:     "UPDATE file SET title = ? WHERE id = ?",
+    QueryID.FileSetPosition:  """
     UPDATE file SET
         position = ?,
         last_played = ?
     WHERE id = ?""",
-    query_id.FileSetProgram:   "UPDATE file SET program_id = ? WHERE id = ?",
-    query_id.FileSetOrd:       """
+    QueryID.FileSetProgram:   "UPDATE file SET program_id = ? WHERE id = ?",
+    QueryID.FileSetOrd:       """
     UPDATE file SET
         ord1 = ?,
         ord2 = ?
     WHERE id = ?""",
-    query_id.FolderAdd:        "INSERT INTO folder (path) VALUES (?)",
-    query_id.FolderGetAll:     "SELECT id, path, last_scan FROM folder",
-    query_id.FolderGetByPath:  """
+    QueryID.FolderAdd:        "INSERT INTO folder (path) VALUES (?)",
+    QueryID.FolderGetAll:     "SELECT id, path, last_scan FROM folder",
+    QueryID.FolderGetByPath:  """
     SELECT
         id,
         last_scan
     FROM folder
     WHERE path = ?""",
-    query_id.FolderGetByID:    """
+    QueryID.FolderGetByID:    """
     SELECT
         path,
         last_scan
     FROM folder
     WHERE id = ?""",
-    query_id.FolderUpdateScan: "UPDATE folder SET last_scan = ? WHERE id = ?",
+    QueryID.FolderUpdateScan: "UPDATE folder SET last_scan = ? WHERE id = ?",
 }
 
 # Local Variables: #
