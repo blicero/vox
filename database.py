@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-10-31 19:49:30 krylon>
+# Time-stamp: <2023-10-31 22:25:09 krylon>
 #
 # /data/code/python/vox/database.py
 # created on 28. 10. 2023
@@ -16,9 +16,16 @@ vox.database
 (c) 2023 Benjamin Walkenhorst
 """
 
+import logging
+import sqlite3
 import threading
 from enum import Enum, auto
-from typing import Final
+from typing import Final, Optional
+
+import krylib
+
+from vox import common
+from vox.data import Program
 
 INIT_QUERIES: Final[list[str]] = [
     """
@@ -103,7 +110,9 @@ class QueryID(Enum):
 db_queries: Final[dict[QueryID, str]] = {
     QueryID.ProgramAdd:        """
     INSERT INTO program (title, creator)
-                 VALUES (?,     ?)""",
+                 VALUES (?,     ?)
+    RETURNING id
+    """,
     QueryID.ProgramDel:        "DELETE FROM program WHERE id = ?",
     QueryID.ProgramGetAll:     """
     SELECT
@@ -218,6 +227,110 @@ ORDER BY ord1, ord2, title, path ASC
     WHERE id = ?""",
     QueryID.FolderUpdateScan: "UPDATE folder SET last_scan = ? WHERE id = ?",
 }
+
+
+class Database:
+    """Database provides a wrapper around the actual database connection."""
+
+    __slots__ = [
+        "db",
+        "log",
+        "path",
+    ]
+
+    db: sqlite3.Connection
+    log: logging.Logger
+    path: Final[str]
+
+    def __init__(self, path: str) -> None:
+        self.path = path
+        self.log = common.get_logger("database")
+        self.log.debug("Open database at %s", path)
+        with OPEN_LOCK:
+            exist: bool = krylib.fexist(path)
+            self.db = sqlite3.connect(path)  # pylint: disable-msg=C0103
+            self.db.isolation_level = None
+
+            cur: sqlite3.Cursor = self.db.cursor()
+            cur.execute("PRAGMA foreign_keys = true")
+            cur.execute("PRAGMA journal_mode = WAL")
+
+            if not exist:
+                self.__create_db()
+
+    def __create_db(self) -> None:
+        """Initialize a freshly created database"""
+        with self.db:
+            for query in INIT_QUERIES:
+                cur: sqlite3.Cursor = self.db.cursor()
+                cur.execute(query)
+
+    def __enter__(self) -> None:
+        self.db.__enter__()
+
+    def __exit__(self, ex_type, ex_val, traceback) -> None:
+        return self.db.__exit__(ex_type, ex_val, traceback)
+
+    def program_add(self, prog: Program) -> None:
+        """Add a Program to the database."""
+        cur: sqlite3.Cursor = self.db.Cursor()
+        cur.execute(db_queries[QueryID.ProgramAdd], (prog.title, prog.creator))
+        row = cur.fetchone()
+        prog.program_id = row[0]
+
+    def program_delete(self, prog) -> None:
+        """Remove a program from the database."""
+        cur: sqlite3.Cursor = self.db.Cursor()
+        cur.execute(db_queries[QueryID.ProgramDel], (prog.program_id, ))
+
+    def program_get_all(self) -> list[Program]:
+        """Load all Programs from the database."""
+        cur: sqlite3.Cursor = self.db.Cursor()
+        cur.execute(db_queries[QueryID.ProgramGetAll])
+        progs: list[Program] = []
+        for row in cur:
+            p = Program(
+                program_id=row[0],
+                title=row[1],
+                creator=row[2],
+                url=row[3],
+                cur_file=row[4])
+            progs.append(p)
+        return progs
+
+    def program_get_by_id(self, pid: int) -> Optional[Program]:
+        """Fetch a Program by its database ID"""
+        cur: sqlite3.Cursor = self.db.Cursor
+        cur.execute(db_queries[QueryID.ProgramGetByID], (pid, ))
+        row = cur.fetchone()
+        if row is not None:
+            prog = Program(
+                program_id=pid,
+                title=row[0],
+                creator=row[1],
+                url=row[2],
+                cur_file=row[3],
+            )
+            return prog
+        else:
+            return None
+
+    def program_get_by_title(self, title: str) -> Optional[Program]:
+        """Fetch a Program by its title"""
+        cur: sqlite3.Cursor = self.db.Cursor
+        cur.execute(db_queries[QueryID.ProgramGetByTitle], (title, ))
+        row = cur.fetchone()
+        if row is not None:
+            prog = Program(
+                program_id=row[0],
+                title=title,
+                creator=row[1],
+                url=row[2],
+                cur_file=row[3],
+            )
+            return prog
+        else:
+            return None
 
 # Local Variables: #
 # python-indent: 4 #
