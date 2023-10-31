@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2023-10-29 18:56:02 krylon>
+# Time-stamp: <2023-10-31 20:31:22 krylon>
 #
 #+TAGS: go(g) internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -38,9 +38,12 @@
    :END:
 *** TODO Data types
     :LOGBOOK:
+    CLOCK: [2023-10-31 Di 19:24]--[2023-10-31 Di 20:31] =>  1:07
     CLOCK: [2023-10-26 Do 22:45]--[2023-10-27 Fr 00:01] =>  1:16
     CLOCK: [2023-10-26 Do 17:55]--[2023-10-26 Do 18:07] =>  0:12
     :END:
+    I copied the database schema over from my last attempt in Go, now I need
+    to change my data types accordingly. :-|
 ** Scanner [0/0]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
