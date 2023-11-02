@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-10-31 22:25:09 krylon>
+# Time-stamp: <2023-11-02 21:25:07 krylon>
 #
 # /data/code/python/vox/database.py
 # created on 28. 10. 2023
@@ -19,13 +19,14 @@ vox.database
 import logging
 import sqlite3
 import threading
+from datetime import datetime
 from enum import Enum, auto
 from typing import Final, Optional
 
 import krylib
 
 from vox import common
-from vox.data import Program
+from vox.data import File, Program
 
 INIT_QUERIES: Final[list[str]] = [
     """
@@ -144,7 +145,8 @@ db_queries: Final[dict[QueryID, str]] = {
     QueryID.ProgramSetCurFile: "UPDATE program SET cur_file = ? WHERE id = ?",
     QueryID.FileAdd:           """
     INSERT INTO file (path, folder_id, ord1, ord2)
-              VALUES (?,    ?,         ?,    ?)""",
+              VALUES (?,    ?,         ?,    ?)
+    RETURNING id""",
     QueryID.FileDel:           "DELETE FROM file WHERE id = ?",
     QueryID.FileGetByID:       """
     SELECT
@@ -268,24 +270,24 @@ class Database:
     def __enter__(self) -> None:
         self.db.__enter__()
 
-    def __exit__(self, ex_type, ex_val, traceback) -> None:
+    def __exit__(self, ex_type, ex_val, traceback):
         return self.db.__exit__(ex_type, ex_val, traceback)
 
     def program_add(self, prog: Program) -> None:
         """Add a Program to the database."""
-        cur: sqlite3.Cursor = self.db.Cursor()
+        cur: sqlite3.Cursor = self.db.cursor()
         cur.execute(db_queries[QueryID.ProgramAdd], (prog.title, prog.creator))
         row = cur.fetchone()
         prog.program_id = row[0]
 
     def program_delete(self, prog) -> None:
         """Remove a program from the database."""
-        cur: sqlite3.Cursor = self.db.Cursor()
+        cur: sqlite3.Cursor = self.db.cursor()
         cur.execute(db_queries[QueryID.ProgramDel], (prog.program_id, ))
 
     def program_get_all(self) -> list[Program]:
         """Load all Programs from the database."""
-        cur: sqlite3.Cursor = self.db.Cursor()
+        cur: sqlite3.Cursor = self.db.cursor()
         cur.execute(db_queries[QueryID.ProgramGetAll])
         progs: list[Program] = []
         for row in cur:
@@ -300,7 +302,7 @@ class Database:
 
     def program_get_by_id(self, pid: int) -> Optional[Program]:
         """Fetch a Program by its database ID"""
-        cur: sqlite3.Cursor = self.db.Cursor
+        cur: sqlite3.Cursor = self.db.cursor()
         cur.execute(db_queries[QueryID.ProgramGetByID], (pid, ))
         row = cur.fetchone()
         if row is not None:
@@ -312,12 +314,11 @@ class Database:
                 cur_file=row[3],
             )
             return prog
-        else:
-            return None
+        return None
 
     def program_get_by_title(self, title: str) -> Optional[Program]:
         """Fetch a Program by its title"""
-        cur: sqlite3.Cursor = self.db.Cursor
+        cur: sqlite3.Cursor = self.db.cursor()
         cur.execute(db_queries[QueryID.ProgramGetByTitle], (title, ))
         row = cur.fetchone()
         if row is not None:
@@ -329,8 +330,126 @@ class Database:
                 cur_file=row[3],
             )
             return prog
-        else:
-            return None
+        return None
+
+    def program_set_title(self, prog: Program, title: str) -> None:
+        """Update the title in a Program."""
+        cur: sqlite3.Cursor = self.db.cursor()
+        cur.execute(db_queries[QueryID.ProgramSetTitle], (title, prog.program_id))  # noqa: E501
+        prog.title = title
+
+    def program_set_creator(self, prog: Program, creator: str) -> None:
+        """Update the Program creator in the database."""
+        cur: sqlite3.Cursor = self.db.cursor()
+        cur.execute(db_queries[QueryID.ProgramSetCreator], (creator, prog.program_id))  # noqa: E501
+        prog.creator = creator
+
+    def program_set_url(self, prog: Program, url: str) -> None:
+        """Update the program's URL."""
+        cur: sqlite3.Cursor = self.db.cursor()
+        cur.execute(db_queries[QueryID.ProgramSetURL], (url, prog.program_id))  # noqa: E501
+        prog.url = url
+
+    def program_set_cur_file(self, prog: Program, file_id: int) -> None:
+        """Update the current file of a Program"""
+        cur: sqlite3.Cursor = self.db.cursor()
+        cur.execute(db_queries[QueryID.ProgramSetCurFile], (file_id, prog.program_id))  # noqa: E501
+        prog.current_file = file_id
+
+    def file_add(self, f: File) -> None:
+        """Add a File to the database."""
+        cur: sqlite3.Cursor = self.db.cursor()
+        args = (f.path,
+                f.folder_id,
+                f.ord1,
+                f.ord2)
+        cur.execute(db_queries[QueryID.FileAdd], args)
+        row = cur.fetchone()
+        f.file_id = row[0]
+
+    def file_delete(self, f: File) -> None:
+        """Remove a file from the database."""
+        cur: sqlite3.Cursor = self.db.cursor()
+        cur.execute(db_queries[QueryID.FileDel], (f.file_id, ))
+
+    def file_get_by_id(self, file_id: int) -> Optional[File]:
+        """Fetch a File by its ID"""
+        cur: sqlite3.Cursor = self.db.cursor()
+        cur.execute(db_queries[QueryID.FileGetByID], (file_id, ))
+        row = cur.fetchone()
+        if row is not None:
+            f = File(
+                file_id=file_id,
+                program_id=row[0],
+                folder_id=row[1],
+                path=row[2],
+                title=row[3],
+                position=row[4],
+                last_played=datetime.fromtimestamp(row[5]),
+                ord1=row[6],
+                ord2=row[7],
+            )
+            return f
+        return None
+
+    def file_get_by_path(self, path: str) -> Optional[File]:
+        """Fetch a File by its path"""
+        cur: sqlite3.Cursor = self.db.cursor()
+        cur.execute(db_queries[QueryID.FileGetByPath], (path, ))
+        row = cur.fetchone()
+        if row is not None:
+            f = File(
+                file_id=row[0],
+                program_id=row[1],
+                folder_id=row[2],
+                path=path,
+                title=row[3],
+                position=row[4],
+                last_played=datetime.fromtimestamp(row[5]),
+                ord1=row[6],
+                ord2=row[7],
+            )
+            return f
+        return None
+
+    def file_get_by_program(self, prog_id: int) -> list[File]:
+        """Load all Files that belong to a given Program."""
+        cur: sqlite3.Cursor = self.db.cursor()
+        cur.execute(db_queries[QueryID.FileGetByProgram], (prog_id, ))
+        files: list[File] = []
+        for row in cur:
+            f = File(
+                file_id=row[0],
+                program_id=prog_id,
+                folder_id=row[1],
+                path=row[2],
+                title=row[3],
+                position=row[4],
+                last_played=datetime.fromtimestamp(row[5]),
+                ord1=row[6],
+                ord2=row[7],
+            )
+            files.append(f)
+        return files
+
+    def file_get_no_program(self) -> list[File]:
+        """Return all Files that have no program associated with them."""
+        cur: sqlite3.Cursor = self.db.Cursor()
+        files: list[File] = []
+        cur.execute(db_queries[QueryID.FileGetNoProgram])
+        for row in cur:
+            f = File(
+                file_id=row[0],
+                folder_id=row[1],
+                path=row[2],
+                title=row[3],
+                position=row[4],
+                last_played=datetime.fromtimestamp(row[5]),
+                ord1=row[6],
+                ord2=row[7],
+            )
+            files.append(f)
+        return files
 
 # Local Variables: #
 # python-indent: 4 #
