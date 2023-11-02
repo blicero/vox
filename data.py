@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-10-31 21:16:55 krylon>
+# Time-stamp: <2023-11-02 20:23:26 krylon>
 #
 # /data/code/python/vox/data.py
 # created on 25. 10. 2023
@@ -145,7 +145,7 @@ class Program:  # pylint: disable-msg=R0903
             self.creator = fields["creator"]
         if "url" in fields:
             assert (fields["url"] is None) or isinstance(fields["url"], str)
-            self.last_played = fields["url"]
+            self.url = fields["url"]
         if "current_file" in fields:
             assert isinstance(fields["current_file"], int)
             self.current_file = fields["current_file"]
