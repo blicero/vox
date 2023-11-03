@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-02 21:25:07 krylon>
+# Time-stamp: <2023-11-03 19:34:03 krylon>
 #
 # /data/code/python/vox/database.py
 # created on 28. 10. 2023
@@ -26,7 +26,7 @@ from typing import Final, Optional
 import krylib
 
 from vox import common
-from vox.data import File, Program
+from vox.data import File, Program, Folder
 
 INIT_QUERIES: Final[list[str]] = [
     """
@@ -79,7 +79,7 @@ CREATE TABLE file (
 OPEN_LOCK: Final[threading.Lock] = threading.Lock()
 
 
-# pylint: disable-msg=C0103
+# pylint: disable-msg=C0103,R0904
 class QueryID(Enum):
     """Provides symbolic constants for database queries"""
     ProgramAdd = auto()
@@ -213,7 +213,7 @@ ORDER BY ord1, ord2, title, path ASC
         ord1 = ?,
         ord2 = ?
     WHERE id = ?""",
-    QueryID.FolderAdd:        "INSERT INTO folder (path) VALUES (?)",
+    QueryID.FolderAdd:        "INSERT INTO folder (path) VALUES (?) RETURNING id",  # noqa: E501
     QueryID.FolderGetAll:     "SELECT id, path, last_scan FROM folder",
     QueryID.FolderGetByPath:  """
     SELECT
@@ -434,7 +434,7 @@ class Database:
 
     def file_get_no_program(self) -> list[File]:
         """Return all Files that have no program associated with them."""
-        cur: sqlite3.Cursor = self.db.Cursor()
+        cur: sqlite3.Cursor = self.db.cursor()
         files: list[File] = []
         cur.execute(db_queries[QueryID.FileGetNoProgram])
         for row in cur:
@@ -450,6 +450,76 @@ class Database:
             )
             files.append(f)
         return files
+
+    def file_set_title(self, f: File, title: str) -> None:
+        """Update a File's title."""
+        cur: sqlite3.Cursor = self.db.cursor()
+        cur.execute(db_queries[QueryID.FileSetTitle], (title, f.file_id))
+        f.title = title
+
+    def file_set_position(self, f: File, pos: int) -> None:
+        """Update a File's playback position."""
+        cur: sqlite3.Cursor = self.db.cursor()
+        cur.execute(db_queries[QueryID.FileSetPosition], (pos, f.file_id))
+        f.position = pos
+
+    def file_set_ord(self, f: File, o1: int, o2: int) -> None:
+        """Set a File's sorting indices."""
+        cur: sqlite3.Cursor = self.db.cursor()
+        cur.execute(db_queries[QueryID.FileSetOrd], (o1, o2, f.file_id))
+        f.ord1 = o1
+        f.ord2 = o2
+
+    def file_set_program(self, f: File, pid: int) -> None:
+        """Set a File's Program."""
+        cur: sqlite3.Cursor = self.db.cursor()
+        cur.execute(db_queries[QueryID.FileSetProgram], (pid, f.file_id))
+        f.program_id = pid
+
+    def folder_add(self, folder: Folder) -> None:
+        """Add a Folder to the database."""
+        cur: sqlite3.Cursor = self.db.cursor()
+        cur.execute(db_queries[QueryID.FolderAdd], (folder.path, ))
+        row = cur.fetchone()
+        folder.folder_id = row[0]
+
+    def folder_get_all(self) -> list[Folder]:
+        """Fetch all folders from the database"""
+        cur: sqlite3.Cursor = self.db.cursor()
+        cur.execute(db_queries[QueryID.FolderGetAll])
+        folders: list[Folder] = []
+        for row in cur:
+            f = Folder(row[0], row[1], row[2])
+            folders.append(f)
+        return folders
+
+    def folder_get_by_id(self, folder_id: int) -> Optional[Folder]:
+        """Look up a Folder by its ID"""
+        cur = self.db.cursor()
+        cur.execute(db_queries[QueryID.FolderGetByID], (folder_id, ))
+        row = cur.fetchone()
+        if row is not None:
+            f = Folder(folder_id, row[0], row[1])
+            return f
+        return None
+
+    def folder_get_by_path(self, path: str) -> Optional[Folder]:
+        """Look up a Folder by its path"""
+        cur = self.db.cursor()
+        cur.execute(db_queries[QueryID.FolderGetByPath], (path, ))
+        row = cur.fetchone()
+        if row is not None:
+            f = Folder(row[0], path, row[1])
+            return f
+        return None
+
+    def folder_update_scan(self, folder: Folder, timestamp: datetime) -> None:
+        """Update a Folder's scan timestamp."""
+        cur = self.db.cursor()
+        cur.execute(db_queries[QueryID.FolderUpdateScan],
+                    (int(timestamp.timestamp()),
+                     folder.folder_id))
+        folder.last_scan = timestamp
 
 # Local Variables: #
 # python-indent: 4 #
