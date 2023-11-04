@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-04 18:51:12 krylon>
+# Time-stamp: <2023-11-04 20:50:08 krylon>
 #
 # /data/code/python/vox/test_database.py
 # created on 03. 11. 2023
@@ -17,6 +17,7 @@ vox.test_database
 """
 
 import os
+import unittest
 from datetime import datetime
 from typing import Final
 
@@ -33,8 +34,11 @@ if isdir("/data/ram"):
 tst_folder: Final[str] = "/tmp/audio"
 
 
-class DatabaseTest:
+class DatabaseTest(unittest.TestCase):
     """Test the Database class. Duh."""
+
+    folder: str
+    db: database.Database
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -44,7 +48,7 @@ class DatabaseTest:
 
     @classmethod
     def tearDownClass(cls) -> None:
-        os.system(f"/bin/rm -rf {test_root}")
+        os.system(f"/bin/rm -rf {cls.folder}")
 
     def test_01_db_open(self) -> None:
         try:
@@ -52,8 +56,8 @@ class DatabaseTest:
         except Exception as e:
             self.fail(f"Failed to open database: {e}")
 
-    def test_02_folder_add(self):
-        f = Folder(path=tst_folder)
+    def test_02_folder_add(self) -> None:
+        f = Folder(0, tst_folder)
         try:
             self.__class__.db.folder_add(f)
         except Exception as e:
@@ -63,7 +67,7 @@ class DatabaseTest:
             self.assertIsInstance(f.folder_id, int)
             self.assertGreater(f.folder_id, 0)
 
-    def test_03_folder_get_by_path(self):
+    def test_03_folder_get_by_path(self) -> None:
         try:
             f = self.__class__.db.folder_get_by_path(tst_folder)
         except Exception as e:
@@ -72,7 +76,7 @@ class DatabaseTest:
             self.assertIsNotNone(f)
             self.assertIsInstance(f, Folder)
 
-    def test_04_folder_get_all(self):
+    def test_04_folder_get_all(self) -> None:
         try:
             folders = self.__class__.db.folder_get_all()
         except Exception as e:
@@ -80,27 +84,36 @@ class DatabaseTest:
         else:
             self.assertIsNotNone(folders)
             self.assertIsInstance(folders, list)
-            self.assertIsEqual(len(folders), 1)
+            self.assertEqual(len(folders), 1)
 
-    def test_05_file_add(self):
+    def test_05_file_add(self) -> None:
         folder = self.__class__.db.folder_get_by_path(tst_folder)
         files: list[File] = []
-        for i in range(1, 11):
-            f = File(
-                folder_id=folder.folder_id,
-                path=os.path.join(tst_folder, f"audio{i:02d}.mp3"),
-                ord1=0,
-                ord2=i,
-            )
-            files.append(f)
-            try:
-                self.__class__.db.file_add(f)
-            except Exception as e:
-                self.fail(f"Cannot add file {f.path} to datbase: {e}")
-            else:
-                self.assertIsNotNone(f.file_id)
-                self.assertIsInstance(f.file_id, int)
-                self.assertIsGreater(f.file_id, 0)
+        with self.__class__.db:
+            for i in range(1, 11):
+                f = File(
+                    folder_id=folder.folder_id,
+                    path=os.path.join(tst_folder, f"audio{i:02d}.mp3"),
+                    ord1=0,
+                    ord2=i,
+                )
+                files.append(f)
+                try:
+                    self.__class__.db.file_add(f)
+                except Exception as e:
+                    self.fail(f"Cannot add file {f.path} to datbase: {e}")
+                else:
+                    self.assertIsNotNone(f.file_id)
+                    self.assertIsInstance(f.file_id, int)
+                    self.assertGreater(f.file_id, 0)
+
+        try:
+            result = self.__class__.db.file_get_no_program()
+            self.assertIsNotNone(result)
+            self.assertIsInstance(result, list)
+            self.assertCountEqual(result, files)
+        except Exception as e:
+            self.fail(f"Error retrieving files from database: {e}")
 
 
 # Local Variables: #

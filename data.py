@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-02 20:23:26 krylon>
+# Time-stamp: <2023-11-04 20:49:37 krylon>
 #
 # /data/code/python/vox/data.py
 # created on 25. 10. 2023
@@ -87,7 +87,7 @@ class File:  # pylint: disable-msg=R0902,R0903
         else:
             raise ValueError("Missing field folder_id")
         if "path" in fields:
-            assert isinstance(fields["folder_id"], str)
+            assert isinstance(fields["path"], str)
             self.path = fields["path"]
         else:
             raise ValueError("Missing field path")
