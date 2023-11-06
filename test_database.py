@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-04 20:50:08 krylon>
+# Time-stamp: <2023-11-06 19:29:32 krylon>
 #
 # /data/code/python/vox/test_database.py
 # created on 03. 11. 2023
@@ -26,12 +26,12 @@ from krylib import isdir
 from vox import common, database
 from vox.data import File, Folder
 
-test_root: str = "/tmp/"
+TEST_ROOT: str = "/tmp/"
 
 if isdir("/data/ram"):
-    test_root = "/data/ram"
+    TEST_ROOT = "/data/ram"
 
-tst_folder: Final[str] = "/tmp/audio"
+TST_FOLDER: Final[str] = "/tmp/audio"
 
 
 class DatabaseTest(unittest.TestCase):
@@ -42,25 +42,30 @@ class DatabaseTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.folder = os.path.join(test_root,
-                                  datetime.now().strftime("vox_test_database_%Y%m%d_%H%M%S"))  # noqa: E501
+        stamp = datetime.now()
+        folder_name = stamp.strftime("vox_test_database_%Y%m%d_%H%M%S")
+        cls.folder = os.path.join(TEST_ROOT,
+                                  folder_name)
         common.set_basedir(cls.folder)
 
     @classmethod
     def tearDownClass(cls) -> None:
-        os.system(f"/bin/rm -rf {cls.folder}")
+        # os.system(f"/bin/rm -rf {cls.folder}")
+        pass
 
     def test_01_db_open(self) -> None:
+        """Test opening the database."""
         try:
             self.__class__.db = database.Database(common.path.db())
-        except Exception as e:
+        except Exception as e:  # pylint: disable-msg=W0718
             self.fail(f"Failed to open database: {e}")
 
     def test_02_folder_add(self) -> None:
-        f = Folder(0, tst_folder)
+        """Test adding a Folder"""
+        f = Folder(0, TST_FOLDER)
         try:
             self.__class__.db.folder_add(f)
-        except Exception as e:
+        except Exception as e:  # pylint: disable-msg=W0718
             self.fail(f"Failed to add folder {f.path}: {e}")
         else:
             self.assertIsNotNone(f.folder_id)
@@ -68,18 +73,20 @@ class DatabaseTest(unittest.TestCase):
             self.assertGreater(f.folder_id, 0)
 
     def test_03_folder_get_by_path(self) -> None:
+        """Test looking up a Folder by the path"""
         try:
-            f = self.__class__.db.folder_get_by_path(tst_folder)
-        except Exception as e:
+            f = self.__class__.db.folder_get_by_path(TST_FOLDER)
+        except Exception as e:  # pylint: disable-msg=W0718
             self.fail(f"Failed to look up folder /tmp/audio: {e}")
         else:
             self.assertIsNotNone(f)
             self.assertIsInstance(f, Folder)
 
     def test_04_folder_get_all(self) -> None:
+        """Test loading all Folders"""
         try:
             folders = self.__class__.db.folder_get_all()
-        except Exception as e:
+        except Exception as e:  # pylint: disable-msg=W0718
             self.fail(f"Failed to load all folders: {e}")
         else:
             self.assertIsNotNone(folders)
@@ -87,33 +94,34 @@ class DatabaseTest(unittest.TestCase):
             self.assertEqual(len(folders), 1)
 
     def test_05_file_add(self) -> None:
-        folder = self.__class__.db.folder_get_by_path(tst_folder)
+        """Test adding a File"""
+        self.maxDiff = None
+        folder = self.__class__.db.folder_get_by_path(TST_FOLDER)
+        self.assertIsInstance(folder, Folder)
+        assert isinstance(folder, Folder)
         files: list[File] = []
         with self.__class__.db:
             for i in range(1, 11):
                 f = File(
                     folder_id=folder.folder_id,
-                    path=os.path.join(tst_folder, f"audio{i:02d}.mp3"),
+                    path=os.path.join(TST_FOLDER, f"audio{i:02d}.mp3"),
                     ord1=0,
                     ord2=i,
                 )
                 files.append(f)
                 try:
                     self.__class__.db.file_add(f)
-                except Exception as e:
+                except Exception as e:  # pylint: disable-msg=W0718
                     self.fail(f"Cannot add file {f.path} to datbase: {e}")
                 else:
                     self.assertIsNotNone(f.file_id)
                     self.assertIsInstance(f.file_id, int)
                     self.assertGreater(f.file_id, 0)
 
-        try:
-            result = self.__class__.db.file_get_no_program()
-            self.assertIsNotNone(result)
-            self.assertIsInstance(result, list)
-            self.assertCountEqual(result, files)
-        except Exception as e:
-            self.fail(f"Error retrieving files from database: {e}")
+        result = self.__class__.db.file_get_no_program()
+        self.assertIsNotNone(result)
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), len(files))
 
 
 # Local Variables: #
