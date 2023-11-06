@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-06 19:14:11 krylon>
+# Time-stamp: <2023-11-06 20:44:19 krylon>
 #
 # /data/code/python/vox/scanner.py
 # created on 04. 11. 2023
@@ -22,6 +22,8 @@ import os
 import os.path
 import re
 from datetime import datetime
+
+import mutagen
 
 from vox import common, database
 from vox.data import File, Folder
@@ -55,6 +57,7 @@ class Scanner:
                 folder = Folder(0, path, datetime.now())
                 self.db.folder_add(folder)
 
+            # pylint: disable-msg=R1702
             for dirpath, _subfolders, files in os.walk(path):
                 for f in files:
                     if AUDIO_PAT.search(f) is not None:
@@ -66,6 +69,15 @@ class Scanner:
                                 folder_id=folder.folder_id,
                                 path=full_path,
                             )
+                            try:
+                                meta = mutagen.File(full_path)
+
+                                if "title" in meta:
+                                    db_file.title = meta["title"][0]
+                                if "track" in meta:
+                                    db_file.ord2 = int(meta["track"][0])
+                            except Exception as e:  # pylint: disable-msg=W0718
+                                self.log.error("Caught exception while handling metadata: %s", e)  # noqa: E501 # pylint: disable-msg=C0301
                             self.db.file_add(db_file)
 
         self.db.folder_update_scan(folder, datetime.now())
