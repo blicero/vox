@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-04 20:49:37 krylon>
+# Time-stamp: <2023-11-06 18:59:56 krylon>
 #
 # /data/code/python/vox/data.py
 # created on 25. 10. 2023
@@ -107,6 +107,8 @@ class File:  # pylint: disable-msg=R0902,R0903
         if "position" in fields:
             assert isinstance(fields["position"], int)
             self.position = fields["position"]
+        else:
+            self.position = 0
         if "last_played" in fields:
             assert isinstance(fields["last_played"], datetime)
             self.last_played = fields["last_played"]
