@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-04 19:04:59 krylon>
+# Time-stamp: <2023-11-06 19:12:13 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -22,12 +22,13 @@ from vox import common, database
 
 gi.require_foreign("Gtk", "3.0")
 from gi.repository import \
-    GdkPixbuf as gpb  # noqa: E402,E501,F401 # pylint: disable-msg=C0411
+    GdkPixbuf as gpb  # noqa: E402,E501,F401 # pylint: disable-msg=C0411,C0413,W0611
 from gi.repository import \
-    GLib as glib  # noqa: E402,E501,F401 # pylint: disable-msg=C0411
-from gi.repository import Gtk as gtk  # noqa: E402,E501,F401 # pylint: disable-msg=C0411
+    GLib as glib  # noqa: E402,E501,F401 # pylint: disable-msg=C0411,C0413,W0611
+from gi.repository import Gtk as gtk  # noqa: E402,E501,F401 # pylint: disable-msg=C0411,C0413,W0611
 
 
+# pylint: disable-msg=R0903
 class VoxUI:
     """The graphical interface to the application, built using gtk3"""
 
