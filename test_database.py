@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-06 19:29:32 krylon>
+# Time-stamp: <2023-11-06 20:49:37 krylon>
 #
 # /data/code/python/vox/test_database.py
 # created on 03. 11. 2023
@@ -50,8 +50,7 @@ class DatabaseTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls) -> None:
-        # os.system(f"/bin/rm -rf {cls.folder}")
-        pass
+        os.system(f"/bin/rm -rf {cls.folder}")
 
     def test_01_db_open(self) -> None:
         """Test opening the database."""
@@ -95,7 +94,7 @@ class DatabaseTest(unittest.TestCase):
 
     def test_05_file_add(self) -> None:
         """Test adding a File"""
-        self.maxDiff = None
+        self.maxDiff = None  # pylint: disable-msg=C0103
         folder = self.__class__.db.folder_get_by_path(TST_FOLDER)
         self.assertIsInstance(folder, Folder)
         assert isinstance(folder, Folder)
