@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-06 19:12:13 krylon>
+# Time-stamp: <2023-11-08 08:26:03 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -35,6 +35,15 @@ class VoxUI:
     def __init__(self):
         self.log = common.get_logger("GUI")
         self.db = database.Database(common.path.db())
+
+        # Create widgets
+        self.win = gtk.Window()
+        self.mbox = gtk.Box(orientation=gtk.Orientation.VERTICAL)
+        self.menubar = gtk.MenuBar()
+        # menu stuff tbd ...
+        self.notebook = gtk.Notebook()
+        self.page1 = gtk.Box()
+        # self.prog_view = 
 
 # Local Variables: #
 # python-indent: 4 #
