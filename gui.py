@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-13 19:14:13 krylon>
+# Time-stamp: <2023-11-14 00:05:57 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -30,10 +30,11 @@ gi.require_version("GdkPixbuf", "2.0")
 # from gi.repository import \
 #     GdkPixbuf as \
 #     gpb  # noqa: F401,E402,E501 # pylint: disable-msg=C0411,W0611 # type: ignore
+from gi.repository import Gdk as gdk  # noqa: E402
 # from gi.repository import \
 #     GLib as \
 #     glib  # noqa: F401,E402,E501 # pylint: disable-msg=C0411,W0611 # type: ignore
-from gi.repository import Gtk as gtk  # noqa: E402 # pylint: disable-msg=C0411
+from gi.repository import Gtk as gtk  # noqa: E402,E501 # pylint: disable-msg=C0411,E0611
 
 
 # pylint: disable-msg=R0903
@@ -135,12 +136,17 @@ class VoxUI:
         self.fm_quit_item.connect("activate", self.__quit)
         self.fm_scan_item.connect("activate", self.scan_folder)
         self.fm_reload_item.connect("activate", self.__refresh)
+        self.prog_view.connect("button-press-event",
+                               self.__handle_prog_view_click)
 
         self.win.show_all()
 
     def __quit(self, *_ignore: Any) -> None:
         self.win.destroy()
         gtk.main_quit()
+
+    def __handle_prog_view_click(self, evt: gdk.Event) -> None:
+        pass
 
     def __refresh(self, *_ignore: Any) -> None:
         """Wipe and recreate the data model"""
