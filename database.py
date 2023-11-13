@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-03 19:34:03 krylon>
+# Time-stamp: <2023-11-10 23:09:43 krylon>
 #
 # /data/code/python/vox/database.py
 # created on 28. 10. 2023
@@ -21,12 +21,12 @@ import sqlite3
 import threading
 from datetime import datetime
 from enum import Enum, auto
-from typing import Final, Optional
+from typing import Final, Optional, Union
 
 import krylib
 
 from vox import common
-from vox.data import File, Program, Folder
+from vox.data import File, Folder, Program
 
 INIT_QUERIES: Final[list[str]] = [
     """
@@ -95,6 +95,7 @@ class QueryID(Enum):
     FileDel = auto()
     FileGetByID = auto()
     FileGetByPath = auto()
+    FileGetByFolder = auto()
     FileGetByProgram = auto()
     FileGetNoProgram = auto()
     FileSetTitle = auto()
@@ -172,6 +173,21 @@ db_queries: Final[dict[QueryID, str]] = {
         ord2
     FROM file
     WHERE path = ?""",
+    QueryID.FileGetByFolder: """
+SELECT
+    id,
+    program_id,
+    path,
+    title,
+    position,
+    last_played,
+    url,
+    ord1,
+    ord2
+FROM file
+WHERE folder_id = ?
+ORDER BY ord1, ord2, title, path ASC
+    """,
     QueryID.FileGetByProgram: """
 SELECT
     id,
@@ -422,6 +438,32 @@ class Database:
                 file_id=row[0],
                 program_id=prog_id,
                 folder_id=row[1],
+                path=row[2],
+                title=row[3],
+                position=row[4],
+                last_played=datetime.fromtimestamp(row[5]),
+                ord1=row[6],
+                ord2=row[7],
+            )
+            files.append(f)
+        return files
+
+    def file_get_by_folder(self, folder: Union[int, Folder]) -> list[File]:
+        """Load all Files that live in the given Folder."""
+        folder_id: int = 0
+        if isinstance(folder, int):
+            folder_id = folder
+        elif isinstance(folder, Folder):
+            folder_id = folder.folder_id
+
+        cur: sqlite3.Cursor = self.db.cursor()
+        cur.execute(db_queries[QueryID.FileGetByProgram], (folder_id, ))
+        files: list[File] = []
+        for row in cur:
+            f = File(
+                file_id=row[0],
+                folder_id=folder_id,
+                program_id=row[1],
                 path=row[2],
                 title=row[3],
                 position=row[4],
