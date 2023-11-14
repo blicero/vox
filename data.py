@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-06 18:59:56 krylon>
+# Time-stamp: <2023-11-14 23:31:19 krylon>
 #
 # /data/code/python/vox/data.py
 # created on 25. 10. 2023
@@ -17,6 +17,7 @@ vox.data
 """
 
 
+import os
 from datetime import datetime
 from typing import Optional, Union
 
@@ -115,6 +116,12 @@ class File:  # pylint: disable-msg=R0902,R0903
         if "url" in fields:
             assert isinstance(fields["url"], str)
             self.url = fields["url"]
+
+    def display_title(self) -> str:
+        """Return the File's title if set or the filename otherwise."""
+        if self.title != "":
+            return self.title
+        return os.path.basename(self.path)
 
 
 class Program:  # pylint: disable-msg=R0903
