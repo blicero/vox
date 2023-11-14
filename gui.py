@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-14 00:05:57 krylon>
+# Time-stamp: <2023-11-14 23:32:21 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -18,7 +18,7 @@ vox.ui
 
 # pylint: disable-msg=C0413,R0902,C0411
 from threading import Lock, Thread
-from typing import Any
+from typing import Any, Optional
 
 import gi  # type: ignore
 
@@ -26,22 +26,24 @@ from vox import common, database, scanner
 from vox.data import File, Program
 
 gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
 gi.require_version("GdkPixbuf", "2.0")
+# from gi.repository import \
+#     GLib as \
+#     glib  # noqa: F401,E402,E501 # pylint: disable-msg=C0411,W0611 # type: ignore
 # from gi.repository import \
 #     GdkPixbuf as \
 #     gpb  # noqa: F401,E402,E501 # pylint: disable-msg=C0411,W0611 # type: ignore
 from gi.repository import Gdk as gdk  # noqa: E402
-# from gi.repository import \
-#     GLib as \
-#     glib  # noqa: F401,E402,E501 # pylint: disable-msg=C0411,W0611 # type: ignore
-from gi.repository import Gtk as gtk  # noqa: E402,E501 # pylint: disable-msg=C0411,E0611
+from gi.repository import \
+    Gtk as gtk  # noqa: E402,E501 # pylint: disable-msg=C0411,E0611
 
 
 # pylint: disable-msg=R0903
 class VoxUI:
     """The graphical interface to the application, built using gtk3"""
 
-    def __init__(self) -> None:
+    def __init__(self) -> None:  # pylint: disable-msg=R9915
         self.log = common.get_logger("GUI")
         self.db = database.Database(common.path.db())
         # self.scanner = scanner.Scanner()
@@ -56,25 +58,32 @@ class VoxUI:
         self.mbox = gtk.Box(orientation=gtk.Orientation.VERTICAL)
 
         self.menubar = gtk.MenuBar()
-        # menu stuff tbd ...
         self.file_menu_item = gtk.MenuItem.new_with_mnemonic("_File")
+        self.action_menu_item = gtk.MenuItem.new_with_mnemonic("_Action")
         self.play_menu_item = gtk.MenuItem.new_with_mnemonic("_Playback")
 
         self.file_menu = gtk.Menu()
+        self.action_menu = gtk.Menu()
         self.play_menu = gtk.Menu()
 
         self.fm_scan_item = gtk.MenuItem.new_with_mnemonic("_Scan folder")
         self.fm_reload_item = gtk.MenuItem.new_with_mnemonic("_Reload")
         self.fm_quit_item = gtk.MenuItem.new_with_mnemonic("_Quit")
 
+        self.am_prog_add_item = gtk.MenuItem.new_with_mnemonic("Add _Program")
+
         self.menubar.add(self.file_menu_item)
+        self.menubar.add(self.action_menu_item)
         self.menubar.add(self.play_menu_item)
         self.file_menu_item.set_submenu(self.file_menu)
+        self.action_menu_item.set_submenu(self.action_menu)
         self.play_menu_item.set_submenu(self.play_menu)
 
         self.file_menu.add(self.fm_scan_item)
         self.file_menu.add(self.fm_reload_item)
         self.file_menu.add(self.fm_quit_item)
+
+        self.action_menu.add(self.am_prog_add_item)
 
         # self.fm_quit_item.connect("activate", gtk.main_quit)
 
@@ -145,7 +154,70 @@ class VoxUI:
         self.win.destroy()
         gtk.main_quit()
 
-    def __handle_prog_view_click(self, evt: gdk.Event) -> None:
+    def __handle_prog_view_click(self, widget, evt: gdk.Event) -> None:
+        self.log.debug("We got a click: %s / %s", widget, evt)
+        if evt.button != 3:
+            self.log.debug("User did not click right button, we don't care.")
+            return
+        x: float = evt.x
+        y: float = evt.y
+
+        path, col, _, _ = self.prog_view.get_path_at_pos(x, y)
+        tree_iter: gtk.TreeIter = self.prog_store.get_iter(path)
+        title = col.get_title()
+
+        self.log.debug("Clicked on column %s", title)
+
+        pid = self.prog_store[tree_iter][0]
+        fid = self.prog_store[tree_iter][2]
+
+        self.log.debug("PID = %d / FID = %d",
+                       pid, fid)
+
+        if pid >= 0:  # Did we click on a Program...
+            pass
+        elif fid > 0:  # ...or on a File?
+            pass
+        else:
+            self.log.debug("Weird: This is not a File nor a Program.")
+
+    def __mk_context_menu_file(self, fiter: gtk.TreeIter, file_id: int) -> Optional[gtk.Menu]:  # noqa: E501 # pylint: disable-msg=C0301
+        file: Optional[File] = self.db.file_get_by_id(file_id)
+
+        if file is not None:
+            self.log.debug("Make context menu for %s", file.display_title())
+        else:
+            self.log.error("File %d was not found in database", file_id)
+            return None
+
+        progs: list[Program] = self.db.program_get_all()
+        menu: gtk.Menu = gtk.Menu()
+        prog_menu: gtk.Menu = gtk.Menu()
+        edit_item = gtk.MenuItem.new_with_mnemonic("_Edit")
+        prog_item = gtk.MenuItem.new_with_label("Program")
+
+        prog_item.set_submenu(prog_menu)
+
+        null_item = gtk.CheckMenuItem.new_with_label("NULL")
+        prog_menu.append(null_item)
+        null_item.set_active(file.program_id == 0)
+
+        for prog in progs:
+            pitem = gtk.CheckMenuItem.new_with_label(prog.title)
+            pitem.set_active(prog.program_id == file.program_id)
+            prog_menu.append(pitem)
+            # set handler!
+
+        menu.append(edit_item)
+        menu.append(prog_item)
+
+        return menu
+
+    def __mk_context_menu_program(self, piter: gtk.TreeIter, prog_id: int) -> Optional[gtk.Menu]:  # noqa: E501 # pylint: disable-msg=C0301
+        self.log.debug("IMPLEMENTME: Context menu for Program %d", prog_id)
+        return None
+
+    def file_set_program(self, fid: int, pid: int) -> None:
         pass
 
     def __refresh(self, *_ignore: Any) -> None:
@@ -160,11 +232,12 @@ class VoxUI:
 
         for p in programs:
             piter = self.prog_store.append(None)
-            piter[0] = p.program_id
-            piter[1] = p.title
+            self.prog_store[piter][0] = p.program_id
+            self.prog_store[piter][1] = p.title
             files = self.db.file_get_by_program(p.program_id)
             for f in files:
                 citer = self.prog_store.append(piter)
+                self.prog_store[citer][0] = -p.program_id
                 self.prog_store[citer][2] = f.file_id
                 self.prog_store[citer][3] = f.title
                 self.prog_store[citer][4] = f.ord1
@@ -173,8 +246,11 @@ class VoxUI:
         no_prog: list[File] = self.db.file_get_no_program()
         if len(no_prog) > 0:
             piter = self.prog_store.append(None)
+            self.prog_store[piter][0] = 0
+            self.prog_store[piter][1] = "None"
             for f in no_prog:
                 citer = self.prog_store.append(piter)
+                self.prog_store[citer][0] = -1
                 self.prog_store[citer][2] = f.file_id
                 self.prog_store[citer][3] = f.title
                 self.prog_store[citer][4] = f.ord1
