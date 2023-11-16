@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-14 23:32:21 krylon>
+# Time-stamp: <2023-11-16 19:59:20 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -18,7 +18,7 @@ vox.ui
 
 # pylint: disable-msg=C0413,R0902,C0411
 from threading import Lock, Thread
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 import gi  # type: ignore
 
@@ -43,7 +43,7 @@ from gi.repository import \
 class VoxUI:
     """The graphical interface to the application, built using gtk3"""
 
-    def __init__(self) -> None:  # pylint: disable-msg=R9915
+    def __init__(self) -> None:  # pylint: disable-msg=R0915
         self.log = common.get_logger("GUI")
         self.db = database.Database(common.path.db())
         # self.scanner = scanner.Scanner()
@@ -174,14 +174,22 @@ class VoxUI:
         self.log.debug("PID = %d / FID = %d",
                        pid, fid)
 
+        menu: Optional[gtk.Menu] = None
+
         if pid >= 0:  # Did we click on a Program...
-            pass
+            menu = self.__mk_context_menu_program(tree_iter, pid)  # pylint: disable-msg=E1128 # noqa: E501
         elif fid > 0:  # ...or on a File?
-            pass
+            menu = self.__mk_context_menu_file(tree_iter, fid)
         else:
             self.log.debug("Weird: This is not a File nor a Program.")
+            return
 
-    def __mk_context_menu_file(self, fiter: gtk.TreeIter, file_id: int) -> Optional[gtk.Menu]:  # noqa: E501 # pylint: disable-msg=C0301
+        assert menu is not None
+
+        menu.show_all()
+        menu.popup_at_pointer(evt)
+
+    def __mk_context_menu_file(self, _fiter: gtk.TreeIter, file_id: int) -> Optional[gtk.Menu]:  # noqa: E501 # pylint: disable-msg=C0301
         file: Optional[File] = self.db.file_get_by_id(file_id)
 
         if file is not None:
@@ -193,6 +201,7 @@ class VoxUI:
         progs: list[Program] = self.db.program_get_all()
         menu: gtk.Menu = gtk.Menu()
         prog_menu: gtk.Menu = gtk.Menu()
+        play_item = gtk.MenuItem.new_with_mnemonic("_Play")
         edit_item = gtk.MenuItem.new_with_mnemonic("_Edit")
         prog_item = gtk.MenuItem.new_with_label("Program")
 
@@ -208,17 +217,30 @@ class VoxUI:
             prog_menu.append(pitem)
             # set handler!
 
+        menu.append(play_item)
         menu.append(edit_item)
         menu.append(prog_item)
 
+        play_item.connect("activate", self.__mk_play_file_handler(file))
+
         return menu
 
-    def __mk_context_menu_program(self, piter: gtk.TreeIter, prog_id: int) -> Optional[gtk.Menu]:  # noqa: E501 # pylint: disable-msg=C0301
+    def __mk_context_menu_program(self, _piter: gtk.TreeIter, prog_id: int) -> Optional[gtk.Menu]:  # noqa: E501 # pylint: disable-msg=C0301,R1711
         self.log.debug("IMPLEMENTME: Context menu for Program %d", prog_id)
         return None
 
     def file_set_program(self, fid: int, pid: int) -> None:
-        pass
+        """Set the Program a given File belongs to"""
+        self.log.debug("Set Program of File %d to %d",
+                       fid,
+                       pid)
+
+    def __mk_play_file_handler(self, file) -> Callable:
+        def play(*_ignore: Any) -> None:
+            self.log.debug("Play File %d (%s)",
+                           file.file_id,
+                           file.display_title)
+        return play
 
     def __refresh(self, *_ignore: Any) -> None:
         """Wipe and recreate the data model"""
