@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-20 20:18:15 krylon>
+# Time-stamp: <2023-11-20 20:56:33 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -18,7 +18,7 @@ vox.ui
 
 # pylint: disable-msg=C0413,R0902,C0411
 from enum import Enum, auto
-from threading import Lock, Thread, local
+from threading import Lock, Thread, current_thread, local
 from typing import Any, Callable, Final, Optional
 
 import gi  # type: ignore
@@ -66,17 +66,9 @@ class VoxUI:
 
         self.state = PlayerState.STOPPED
         gst.init(None)
-
         self.gstloop = gobject.MainLoop()
-        self.pipeline = gst.Pipeline.new("VoxAudiobookReader")
-        self.filesrc = gst.ElementFactory.make("filesrc", "filesrc")
-        self.decode = gst.ElementFactory.make("decodebin", "decode")
-        self.sink = gst.ElementFactory.make("alsasink", "sink")
-        self.pipeline.add(self.filesrc)
-        self.pipeline.add(self.decode)
-        self.pipeline.add(self.sink)
-        self.decode.connect("pad-added", self.decode_src_created)
-        self.filesrc.link(self.decode)
+        self.player = gst.ElementFactory.make("playbin", "player")
+        self.player.set_property("volume", 0.5)
 
         #######################################################
         # Create widgets  #####################################
@@ -101,6 +93,11 @@ class VoxUI:
 
         self.am_prog_add_item = gtk.MenuItem.new_with_mnemonic("Add _Program")
 
+        self.pm_playpause_item = gtk.MenuItem.new_with_mnemonic("_Play/Pause")
+        self.pm_stop_item = gtk.MenuItem.new_with_mnemonic("_Stop")
+        self.pm_next_item = gtk.MenuItem.new_with_mnemonic("_Next")
+        self.pm_prev_item = gtk.MenuItem.new_with_mnemonic("Pre_vious")
+
         self.menubar.add(self.file_menu_item)
         self.menubar.add(self.action_menu_item)
         self.menubar.add(self.play_menu_item)
@@ -114,7 +111,10 @@ class VoxUI:
 
         self.action_menu.add(self.am_prog_add_item)
 
-        # self.fm_quit_item.connect("activate", gtk.main_quit)
+        self.play_menu.add(self.pm_playpause_item)
+        self.play_menu.add(self.pm_stop_item)
+        self.play_menu.add(self.pm_next_item)
+        self.play_menu.add(self.pm_prev_item)
 
         self.notebook = gtk.Notebook()
         self.page1 = gtk.Box()
@@ -170,10 +170,12 @@ class VoxUI:
         #######################################################
         # Connect signal handlers #############################
         #######################################################
-        self.win.connect("destroy", gtk.main_quit)
+        self.win.connect("destroy", self.__quit)
         self.fm_quit_item.connect("activate", self.__quit)
         self.fm_scan_item.connect("activate", self.scan_folder)
         self.fm_reload_item.connect("activate", self.__refresh)
+        self.pm_playpause_item.connect("activate", self.toggle_play_pause)
+        self.pm_stop_item.connect("activate", self.stop)
         self.prog_view.connect("button-press-event",
                                self.__handle_prog_view_click)
 
@@ -192,16 +194,24 @@ class VoxUI:
 
     def __gst_loop(self) -> None:
         """Run the GStreamer mainloop"""
-        while True:
+        try:
+            thr = current_thread()
+            self.log.debug("GStreamer loop starting in thread %d / %s",
+                           thr.ident,
+                           thr.name)
             self.gstloop.run()
+        finally:
+            self.log.info("GStreamer loop has finished.")
 
-    def decode_src_created(self, _element, pad) -> None:
-        """Callback for gstreamer."""
-        self.log.debug("Do the pad link stuff")
-        pad.link(self.sink.get_static_pad("sink"))
+    # def decode_src_created(self, _element, pad) -> None:
+    #     """Callback for gstreamer."""
+    #     self.log.debug("Do the pad link stuff")
+    #     pad.link(self.sink.get_static_pad("sink"))
 
     def __quit(self, *_ignore: Any) -> None:
         self.win.destroy()
+        self.stop()
+        self.gstloop.quit()
         gtk.main_quit()
 
     def __handle_prog_view_click(self, widget, evt: gdk.Event) -> None:
@@ -391,11 +401,11 @@ class VoxUI:
         with self.lock:
             match self.state:
                 case PlayerState.PLAYING:
-                    self.pipeline.set_state(gst.State.PAUSED)
+                    self.player.set_state(gst.State.PAUSED)
                     self.state = PlayerState.PAUSED
                     self.log.debug("Playback is paused now")
                 case PlayerState.PAUSED:
-                    self.pipeline.set_state(gst.State.PLAYING)
+                    self.player.set_state(gst.State.PLAYING)
                     self.state = PlayerState.PLAYING
                     self.log.debug("Playback is playing now")
                 case _:
@@ -409,26 +419,16 @@ class VoxUI:
             self.log.debug("Play file %s",
                            file.display_title())
             uri: Final[str] = f"file://{file.path}"
-            self.pipeline.set_state(gst.State.NULL)
-            self.filesrc.set_property("location", uri)
+            self.player.set_state(gst.State.NULL)
+            self.player.set_property("uri", uri)
             self.state = PlayerState.PLAYING
-            self.pipeline.set_state(gst.State.PLAYING)
+            self.player.set_state(gst.State.PLAYING)
 
     def stop(self, *_ignore) -> None:
         """Stop the player (if it's playing)"""
         with self.lock:
             self.state = PlayerState.STOPPED
-            self.pipeline.set_state(gst.State.NULL)
-
-    # def play_file(self, file: File) -> None:
-    #     """Play a single file."""
-    #     uri: str = "file://" + file.path
-    #     mainloop = gobject.MainLoop()
-    #     player = gst.ElementFactory.make("playbin", "player")
-    #     player.set_property("uri", uri)
-    #     player.set_property("volume", 0.5)
-    #     player.set_state(gst.State.PLAYING)
-    #     mainloop.run()
+            self.player.set_state(gst.State.NULL)
 
 
 def main() -> None:
