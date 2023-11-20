@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-16 19:59:20 krylon>
+# Time-stamp: <2023-11-20 20:18:15 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -17,8 +17,9 @@ vox.ui
 """
 
 # pylint: disable-msg=C0413,R0902,C0411
-from threading import Lock, Thread
-from typing import Any, Callable, Optional
+from enum import Enum, auto
+from threading import Lock, Thread, local
+from typing import Any, Callable, Final, Optional
 
 import gi  # type: ignore
 
@@ -28,6 +29,7 @@ from vox.data import File, Program
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 gi.require_version("GdkPixbuf", "2.0")
+gi.require_version("Gst", "1.0")
 # from gi.repository import \
 #     GLib as \
 #     glib  # noqa: F401,E402,E501 # pylint: disable-msg=C0411,W0611 # type: ignore
@@ -35,8 +37,18 @@ gi.require_version("GdkPixbuf", "2.0")
 #     GdkPixbuf as \
 #     gpb  # noqa: F401,E402,E501 # pylint: disable-msg=C0411,W0611 # type: ignore
 from gi.repository import Gdk as gdk  # noqa: E402
+from gi.repository import GObject as gobject  # noqa: E402
+from gi.repository import Gst as gst  # noqa: E402
 from gi.repository import \
     Gtk as gtk  # noqa: E402,E501 # pylint: disable-msg=C0411,E0611
+
+
+class PlayerState(Enum):
+    """Symbolic constants for the player's state."""
+    STOPPED = auto()
+    PLAYING = auto()
+    PAUSED = auto()
+    OTHER = auto()
 
 
 # pylint: disable-msg=R0903
@@ -44,10 +56,27 @@ class VoxUI:
     """The graphical interface to the application, built using gtk3"""
 
     def __init__(self) -> None:  # pylint: disable-msg=R0915
+        self.local = local()
         self.log = common.get_logger("GUI")
-        self.db = database.Database(common.path.db())
+        # self.db = database.Database(common.path.db())
         # self.scanner = scanner.Scanner()
         self.lock = Lock()
+
+        # Prepare gstreamer pipeline for audio playback
+
+        self.state = PlayerState.STOPPED
+        gst.init(None)
+
+        self.gstloop = gobject.MainLoop()
+        self.pipeline = gst.Pipeline.new("VoxAudiobookReader")
+        self.filesrc = gst.ElementFactory.make("filesrc", "filesrc")
+        self.decode = gst.ElementFactory.make("decodebin", "decode")
+        self.sink = gst.ElementFactory.make("alsasink", "sink")
+        self.pipeline.add(self.filesrc)
+        self.pipeline.add(self.decode)
+        self.pipeline.add(self.sink)
+        self.decode.connect("pad-added", self.decode_src_created)
+        self.filesrc.link(self.decode)
 
         #######################################################
         # Create widgets  #####################################
@@ -148,7 +177,28 @@ class VoxUI:
         self.prog_view.connect("button-press-event",
                                self.__handle_prog_view_click)
 
+        self.loop_thr = Thread(target=self.__gst_loop)
+        self.loop_thr.daemon = True
+        self.loop_thr.start()
         self.win.show_all()
+
+    def __get_db(self) -> database.Database:
+        """Return a database handle that's local to the current thread."""
+        try:
+            return self.local.db
+        except AttributeError:
+            self.local.db = database.Database(common.path.db())
+            return self.local.db
+
+    def __gst_loop(self) -> None:
+        """Run the GStreamer mainloop"""
+        while True:
+            self.gstloop.run()
+
+    def decode_src_created(self, _element, pad) -> None:
+        """Callback for gstreamer."""
+        self.log.debug("Do the pad link stuff")
+        pad.link(self.sink.get_static_pad("sink"))
 
     def __quit(self, *_ignore: Any) -> None:
         self.win.destroy()
@@ -190,7 +240,8 @@ class VoxUI:
         menu.popup_at_pointer(evt)
 
     def __mk_context_menu_file(self, _fiter: gtk.TreeIter, file_id: int) -> Optional[gtk.Menu]:  # noqa: E501 # pylint: disable-msg=C0301
-        file: Optional[File] = self.db.file_get_by_id(file_id)
+        db = self.__get_db()
+        file: Optional[File] = db.file_get_by_id(file_id)
 
         if file is not None:
             self.log.debug("Make context menu for %s", file.display_title())
@@ -198,7 +249,7 @@ class VoxUI:
             self.log.error("File %d was not found in database", file_id)
             return None
 
-        progs: list[Program] = self.db.program_get_all()
+        progs: list[Program] = db.program_get_all()
         menu: gtk.Menu = gtk.Menu()
         prog_menu: gtk.Menu = gtk.Menu()
         play_item = gtk.MenuItem.new_with_mnemonic("_Play")
@@ -235,11 +286,12 @@ class VoxUI:
                        fid,
                        pid)
 
-    def __mk_play_file_handler(self, file) -> Callable:
+    def __mk_play_file_handler(self, file: File) -> Callable:
         def play(*_ignore: Any) -> None:
             self.log.debug("Play File %d (%s)",
                            file.file_id,
-                           file.display_title)
+                           file.display_title())
+            self.play_file(file)
         return play
 
     def __refresh(self, *_ignore: Any) -> None:
@@ -250,22 +302,23 @@ class VoxUI:
     def __load_data(self) -> None:
         """Load programs and files from the database, display them."""
         # Fill the model!
-        programs: list[Program] = self.db.program_get_all()
+        db = self.__get_db()
+        programs: list[Program] = db.program_get_all()
 
         for p in programs:
             piter = self.prog_store.append(None)
             self.prog_store[piter][0] = p.program_id
             self.prog_store[piter][1] = p.title
-            files = self.db.file_get_by_program(p.program_id)
+            files = db.file_get_by_program(p.program_id)
             for f in files:
                 citer = self.prog_store.append(piter)
                 self.prog_store[citer][0] = -p.program_id
                 self.prog_store[citer][2] = f.file_id
-                self.prog_store[citer][3] = f.title
+                self.prog_store[citer][3] = f.display_title()
                 self.prog_store[citer][4] = f.ord1
                 self.prog_store[citer][5] = f.ord2
 
-        no_prog: list[File] = self.db.file_get_no_program()
+        no_prog: list[File] = db.file_get_no_program()
         if len(no_prog) > 0:
             piter = self.prog_store.append(None)
             self.prog_store[piter][0] = 0
@@ -274,7 +327,7 @@ class VoxUI:
                 citer = self.prog_store.append(piter)
                 self.prog_store[citer][0] = -1
                 self.prog_store[citer][2] = f.file_id
-                self.prog_store[citer][3] = f.title
+                self.prog_store[citer][3] = f.display_title()
                 self.prog_store[citer][4] = f.ord1
                 self.prog_store[citer][5] = f.ord2
 
@@ -332,6 +385,50 @@ class VoxUI:
             dlg.run()
         finally:
             dlg.destroy()
+
+    def toggle_play_pause(self, *_ignore: Any) -> None:
+        """Toggle the player's status."""
+        with self.lock:
+            match self.state:
+                case PlayerState.PLAYING:
+                    self.pipeline.set_state(gst.State.PAUSED)
+                    self.state = PlayerState.PAUSED
+                    self.log.debug("Playback is paused now")
+                case PlayerState.PAUSED:
+                    self.pipeline.set_state(gst.State.PLAYING)
+                    self.state = PlayerState.PLAYING
+                    self.log.debug("Playback is playing now")
+                case _:
+                    self.log.debug(
+                        "PlayerState is %s, cannot toggle play/pause",
+                        self.state)
+
+    def play_file(self, file: File) -> None:
+        """Play a single file."""
+        with self.lock:
+            self.log.debug("Play file %s",
+                           file.display_title())
+            uri: Final[str] = f"file://{file.path}"
+            self.pipeline.set_state(gst.State.NULL)
+            self.filesrc.set_property("location", uri)
+            self.state = PlayerState.PLAYING
+            self.pipeline.set_state(gst.State.PLAYING)
+
+    def stop(self, *_ignore) -> None:
+        """Stop the player (if it's playing)"""
+        with self.lock:
+            self.state = PlayerState.STOPPED
+            self.pipeline.set_state(gst.State.NULL)
+
+    # def play_file(self, file: File) -> None:
+    #     """Play a single file."""
+    #     uri: str = "file://" + file.path
+    #     mainloop = gobject.MainLoop()
+    #     player = gst.ElementFactory.make("playbin", "player")
+    #     player.set_property("uri", uri)
+    #     player.set_property("volume", 0.5)
+    #     player.set_state(gst.State.PLAYING)
+    #     mainloop.run()
 
 
 def main() -> None:
