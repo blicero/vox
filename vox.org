@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2023-11-14 23:33:08 krylon>
+# Time-stamp: <2023-11-20 20:20:32 krylon>
 #
 #+TAGS: go(g) internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -12,16 +12,17 @@
   Vox is an audio book reader that saves your listening progress.
 * Clocktable
   #+BEGIN: clocktable :scope file :maxlevel 202 :emphasize t
-  #+CAPTION: Clock summary at [2023-11-14 Di 23:33]
-  | Headline             | Time      |         |      |
-  |----------------------+-----------+---------+------|
-  | *Total time*         | *1d 7:20* |         |      |
-  |----------------------+-----------+---------+------|
-  | *Components [0/0]*   | *1d 7:20* |         |      |
-  | \_  /Database [0/1]/ |           | /14:32/ |      |
-  | \_    Data types     |           |         | 2:35 |
-  | \_  /Scanner [0/0]/  |           | /1:03/  |      |
-  | \_  /UI [0/0]/       |           | /15:45/ |      |
+  #+CAPTION: Clock summary at [2023-11-20 Mo 20:20]
+  | Headline             | Time       |         |      |
+  |----------------------+------------+---------+------|
+  | *Total time*         | *1d 14:50* |         |      |
+  |----------------------+------------+---------+------|
+  | *Components [0/0]*   | *1d 14:50* |         |      |
+  | \_  /Database [0/1]/ |            | /14:32/ |      |
+  | \_    Data types     |            |         | 2:35 |
+  | \_  /Scanner [0/0]/  |            | /1:03/  |      |
+  | \_  /Player [0/0]/   |            | /7:30/  |      |
+  | \_  /UI [0/0]/       |            | /15:45/ |      |
   #+END:
 * Components [0/0]
   :PROPERTIES:
@@ -62,6 +63,12 @@
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
+   :END:
+   :LOGBOOK:
+   CLOCK: [2023-11-20 Mo 19:12]--[2023-11-20 Mo 20:20] =>  1:08
+   CLOCK: [2023-11-18 Sa 18:28]--[2023-11-18 Sa 21:35] =>  3:07
+   CLOCK: [2023-11-18 Sa 16:41]--[2023-11-18 Sa 17:55] =>  1:14
+   CLOCK: [2023-11-16 Do 20:30]--[2023-11-16 Do 22:31] =>  2:01
    :END:
 ** UI [0/0]
    :PROPERTIES:
