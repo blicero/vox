@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-20 20:56:33 krylon>
+# Time-stamp: <2023-11-20 22:40:21 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -290,11 +290,24 @@ class VoxUI:
         self.log.debug("IMPLEMENTME: Context menu for Program %d", prog_id)
         return None
 
+    def __mk_set_program_handler(self, fiter: gtk.TreeIter, file: File, prog: Program) -> Callable:  # noqa: E501
+        def handler(*_ignore: Any) -> None:
+            self.file_set_program(file.file_id, prog.program_id)
+            # Update the model, move the file to its new program.
+        return handler
+
     def file_set_program(self, fid: int, pid: int) -> None:
         """Set the Program a given File belongs to"""
         self.log.debug("Set Program of File %d to %d",
                        fid,
                        pid)
+        db = self.__get_db()
+        with db:
+            f = db.file_get_by_id(fid)
+            if f is not None:
+                db.file_set_program(f, pid)
+            else:
+                self.log.debug("File %d does not exist in database", fid)
 
     def __mk_play_file_handler(self, file: File) -> Callable:
         def play(*_ignore: Any) -> None:
@@ -429,6 +442,21 @@ class VoxUI:
         with self.lock:
             self.state = PlayerState.STOPPED
             self.player.set_state(gst.State.NULL)
+
+    # Managing our stuff
+
+    def create_program(self, *_ignore) -> None:
+        """Create a new Program"""
+        dlg: gtk.Dialog = gtk.Dialog(
+            title="Create Program",
+            parent=self.mw,
+            )
+        dlg.add_buttons(
+            gtk.STOCK_CANCEL,
+            gtk.ResponseType.CANCEL,
+            gtk.STOCK_OK,
+            gtk.ResponseType.OK,
+            )
 
 
 def main() -> None:
