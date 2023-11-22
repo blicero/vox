@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-20 22:40:21 krylon>
+# Time-stamp: <2023-11-22 20:39:45 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -174,6 +174,7 @@ class VoxUI:
         self.fm_quit_item.connect("activate", self.__quit)
         self.fm_scan_item.connect("activate", self.scan_folder)
         self.fm_reload_item.connect("activate", self.__refresh)
+        self.am_prog_add_item.connect("activate", self.create_program)
         self.pm_playpause_item.connect("activate", self.toggle_play_pause)
         self.pm_stop_item.connect("activate", self.stop)
         self.prog_view.connect("button-press-event",
@@ -249,7 +250,7 @@ class VoxUI:
         menu.show_all()
         menu.popup_at_pointer(evt)
 
-    def __mk_context_menu_file(self, _fiter: gtk.TreeIter, file_id: int) -> Optional[gtk.Menu]:  # noqa: E501 # pylint: disable-msg=C0301
+    def __mk_context_menu_file(self, fiter: gtk.TreeIter, file_id: int) -> Optional[gtk.Menu]:  # noqa: E501 # pylint: disable-msg=C0301
         db = self.__get_db()
         file: Optional[File] = db.file_get_by_id(file_id)
 
@@ -276,7 +277,8 @@ class VoxUI:
             pitem = gtk.CheckMenuItem.new_with_label(prog.title)
             pitem.set_active(prog.program_id == file.program_id)
             prog_menu.append(pitem)
-            # set handler!
+            pitem.connect("activate",
+                          self.__mk_set_program_handler(fiter, file, prog))
 
         menu.append(play_item)
         menu.append(edit_item)
@@ -290,25 +292,6 @@ class VoxUI:
         self.log.debug("IMPLEMENTME: Context menu for Program %d", prog_id)
         return None
 
-    def __mk_set_program_handler(self, fiter: gtk.TreeIter, file: File, prog: Program) -> Callable:  # noqa: E501
-        def handler(*_ignore: Any) -> None:
-            self.file_set_program(file.file_id, prog.program_id)
-            # Update the model, move the file to its new program.
-        return handler
-
-    def file_set_program(self, fid: int, pid: int) -> None:
-        """Set the Program a given File belongs to"""
-        self.log.debug("Set Program of File %d to %d",
-                       fid,
-                       pid)
-        db = self.__get_db()
-        with db:
-            f = db.file_get_by_id(fid)
-            if f is not None:
-                db.file_set_program(f, pid)
-            else:
-                self.log.debug("File %d does not exist in database", fid)
-
     def __mk_play_file_handler(self, file: File) -> Callable:
         def play(*_ignore: Any) -> None:
             self.log.debug("Play File %d (%s)",
@@ -316,6 +299,13 @@ class VoxUI:
                            file.display_title())
             self.play_file(file)
         return play
+
+    # pylint: disable-msg=W0238
+    def __mk_set_program_handler(self, fiter: gtk.TreeIter, file: File, prog: Program) -> Callable:  # noqa: E501 # pylint: disable-msg=C0301
+        def handler(*_ignore: Any) -> None:
+            self.file_set_program(fiter, file.file_id, prog.program_id)
+            # Update the model, move the file to its new program.
+        return handler
 
     def __refresh(self, *_ignore: Any) -> None:
         """Wipe and recreate the data model"""
@@ -445,11 +435,12 @@ class VoxUI:
 
     # Managing our stuff
 
+    # pylint: disable-msg=R0914
     def create_program(self, *_ignore) -> None:
         """Create a new Program"""
         dlg: gtk.Dialog = gtk.Dialog(
             title="Create Program",
-            parent=self.mw,
+            parent=self.win,
             )
         dlg.add_buttons(
             gtk.STOCK_CANCEL,
@@ -457,6 +448,79 @@ class VoxUI:
             gtk.STOCK_OK,
             gtk.ResponseType.OK,
             )
+
+        grid = gtk.Grid.new()
+        title_lbl = gtk.Label.new("Title")
+        creator_lbl = gtk.Label.new("Author")
+        url_lbl = gtk.Label.new("URL")
+        title_txt = gtk.Entry.new()
+        creator_txt = gtk.Entry.new()
+        url_txt = gtk.Entry.new()
+
+        grid.attach(title_lbl, 0, 0, 1, 1)
+        grid.attach(title_txt, 1, 0, 1, 1)
+        grid.attach(creator_lbl, 0, 1, 1, 1)
+        grid.attach(creator_txt, 1, 1, 1, 1)
+        grid.attach(url_lbl, 0, 2, 1, 1)
+        grid.attach(url_txt, 1, 2, 1, 1)
+
+        dlg.get_content_area().add(grid)
+        dlg.show_all()
+
+        try:
+            response = dlg.run()
+            if response != gtk.ResponseType.OK:
+                return
+
+            title: Final[str] = title_txt.get_text()
+            creator: Final[str] = creator_txt.get_text()
+            url: Final[str] = url_txt.get_text()
+            prog = Program(
+                title=title,
+                creator=creator,
+                url=url,
+            )
+            db = self.__get_db()
+            with db:
+                db.program_add(prog)
+
+            # Now we need to add the new Program to the TreeStore.
+            piter = self.prog_store.append(None)
+            self.prog_store[piter][0] = prog.program_id
+            self.prog_store[piter][1] = prog.title
+        finally:
+            dlg.destroy()
+
+    def file_set_program(self, fiter: gtk.TreeIter, fid: int, pid: int) -> None:  # noqa: E501
+        """Set the Program a given File belongs to"""
+        self.log.debug("Set Program of File %d to %d",
+                       fid,
+                       pid)
+        db = self.__get_db()
+        with db:
+            f = db.file_get_by_id(fid)
+            if f is not None:
+                db.file_set_program(f, pid)
+            else:
+                self.log.debug("File %d does not exist in database", fid)
+                return
+            # Now we need to find and update/move the entry in our TreeStore.
+            self.prog_store.remove(fiter)
+            piter: gtk.TreeIter = self.prog_store.get_iter_first()
+
+            while (piter is not None) and (self.prog_store[piter][0] != pid):
+                piter = self.prog_store.iter_next(piter)
+
+            if piter is None:
+                self.log.debug("Did not find Program %d in TreeStore!", pid)
+                return
+
+            fiter = self.prog_store.append(piter)
+            self.prog_store[fiter][0] = -pid
+            self.prog_store[fiter][2] = f.file_id
+            self.prog_store[fiter][3] = f.display_title()
+            self.prog_store[fiter][4] = f.ord1
+            self.prog_store[fiter][5] = f.ord2
 
 
 def main() -> None:
