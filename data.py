@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-14 23:31:19 krylon>
+# Time-stamp: <2023-11-22 19:46:33 krylon>
 #
 # /data/code/python/vox/data.py
 # created on 25. 10. 2023
@@ -93,12 +93,14 @@ class File:  # pylint: disable-msg=R0902,R0903
         else:
             raise ValueError("Missing field path")
         if "ord1" in fields:
-            assert isinstance(fields["ord1"], int)
+            assert isinstance(fields["ord1"], int), \
+                f'ord1 must be an int, not a {type(fields["ord1"])}'
             self.ord1 = fields["ord1"]
         else:
             self.ord1 = 0
         if "ord2" in fields:
-            assert isinstance(fields["ord2"], int)
+            assert isinstance(fields["ord2"], int), \
+                f'ord2 must be an int, not a {type(fields["ord2"])}'
             self.ord2 = fields["ord2"]
         else:
             self.ord2 = 0

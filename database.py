@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-10 23:09:43 krylon>
+# Time-stamp: <2023-11-22 19:49:21 krylon>
 #
 # /data/code/python/vox/database.py
 # created on 28. 10. 2023
@@ -111,8 +111,8 @@ class QueryID(Enum):
 
 db_queries: Final[dict[QueryID, str]] = {
     QueryID.ProgramAdd:        """
-    INSERT INTO program (title, creator)
-                 VALUES (?,     ?)
+    INSERT INTO program (title, creator, url)
+                 VALUES (?,     ?,         ?)
     RETURNING id
     """,
     QueryID.ProgramDel:        "DELETE FROM program WHERE id = ?",
@@ -292,7 +292,8 @@ class Database:
     def program_add(self, prog: Program) -> None:
         """Add a Program to the database."""
         cur: sqlite3.Cursor = self.db.cursor()
-        cur.execute(db_queries[QueryID.ProgramAdd], (prog.title, prog.creator))
+        cur.execute(db_queries[QueryID.ProgramAdd],
+                    (prog.title, prog.creator, prog.url))
         row = cur.fetchone()
         prog.program_id = row[0]
 
@@ -442,8 +443,8 @@ class Database:
                 title=row[3],
                 position=row[4],
                 last_played=datetime.fromtimestamp(row[5]),
-                ord1=row[6],
-                ord2=row[7],
+                ord1=(row[7] or 0),
+                ord2=(row[8] or 0),
             )
             files.append(f)
         return files
