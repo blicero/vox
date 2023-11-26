@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-22 20:39:45 krylon>
+# Time-stamp: <2023-11-26 16:10:17 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -22,6 +22,8 @@ from threading import Lock, Thread, current_thread, local
 from typing import Any, Callable, Final, Optional
 
 import gi  # type: ignore
+
+from krylib import cmp, is_natural, is_negative
 
 from vox import common, database, scanner
 from vox.data import File, Program
@@ -129,7 +131,11 @@ class VoxUI:
             int,  # Ord2
             str,  # Duration
         )
-        self.prog_view = gtk.TreeView(model=self.prog_store)
+        self.sort_store = gtk.TreeModelSort(self.prog_store)
+        self.sort_store.set_default_sort_func(cmp_iter)
+        self.prog_view = gtk.TreeView(model=self.sort_store)
+
+        # self.sort_store.set_sort_func(
 
         columns = [
             (0, "PID"),
@@ -216,15 +222,16 @@ class VoxUI:
         gtk.main_quit()
 
     def __handle_prog_view_click(self, widget, evt: gdk.Event) -> None:
-        self.log.debug("We got a click: %s / %s", widget, evt)
+        # self.log.debug("We got a click: %s / %s", widget, evt)
         if evt.button != 3:
-            self.log.debug("User did not click right button, we don't care.")
+            # self.log.debug("User did not click right button, we don't care.")
             return
         x: float = evt.x
         y: float = evt.y
 
         path, col, _, _ = self.prog_view.get_path_at_pos(x, y)
-        tree_iter: gtk.TreeIter = self.prog_store.get_iter(path)
+        cpath = self.sort_store.convert_path_to_child_path(path)
+        tree_iter: gtk.TreeIter = self.prog_store.get_iter(cpath)
         title = col.get_title()
 
         self.log.debug("Clicked on column %s", title)
@@ -521,6 +528,29 @@ class VoxUI:
             self.prog_store[fiter][3] = f.display_title()
             self.prog_store[fiter][4] = f.ord1
             self.prog_store[fiter][5] = f.ord2
+
+
+# pylint: disable-msg=R0911
+def cmp_iter(m: gtk.TreeModel, a, b: gtk.TreeIter, _) -> int:
+    """Comparison function for sorting."""
+    v1 = m.get(a, 0, 1, 2, 3, 4, 5, 6)
+    v2 = m.get(b, 0, 1, 2, 3, 4, 5, 6)
+    if is_natural(v1[0]) and is_negative(v2[0]):
+        return cmp(v1[0], abs(v2[0]))
+    if is_natural(v1[0]) and is_natural(v2[0]):
+        return cmp(v1[0], v2[0])
+    if is_negative(v1[0]) and is_natural(v2[0]):
+        return cmp(abs(v1[0]), v2[0])
+    if is_negative(v1[0]) and is_negative(v2[0]):
+        match cmp(abs(v1[0]), abs(v2[0])):
+            case -1:
+                return -1
+            case 0:
+                return cmp(v1[2], v2[2])
+            case 1:
+                return 1
+
+    return 0
 
 
 def main() -> None:
