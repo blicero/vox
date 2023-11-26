@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-26 16:10:17 krylon>
+# Time-stamp: <2023-11-26 16:54:53 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -546,7 +546,7 @@ def cmp_iter(m: gtk.TreeModel, a, b: gtk.TreeIter, _) -> int:
             case -1:
                 return -1
             case 0:
-                return cmp(v1[2], v2[2])
+                return cmp(v1[3], v2[3])
             case 1:
                 return 1
 
