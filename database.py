@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-22 19:49:21 krylon>
+# Time-stamp: <2023-11-27 23:35:05 krylon>
 #
 # /data/code/python/vox/database.py
 # created on 28. 10. 2023
@@ -35,7 +35,7 @@ INIT_QUERIES: Final[list[str]] = [
         path		TEXT UNIQUE NOT NULL,
         last_scan       INTEGER NOT NULL DEFAULT 0,
         CHECK (path LIKE '/%')
-    )
+    ) STRICT
     """,
 
     """
@@ -45,7 +45,7 @@ CREATE TABLE program (
     creator              TEXT NOT NULL DEFAULT '',
     url                  TEXT NOT NULL DEFAULT '',
     cur_file             INTEGER NOT NULL DEFAULT -1
-)
+) STRICT
     """,
     "CREATE UNIQUE INDEX prog_title_idx ON program (title)",
     "CREATE INDEX prog_creator_idx ON program (creator)",
@@ -68,12 +68,30 @@ CREATE TABLE file (
     FOREIGN KEY (folder_id) REFERENCES folder (id)
         ON DELETE CASCADE
         ON UPDATE RESTRICT
-)
+) STRICT
     """,
     "CREATE INDEX file_prog_idx ON file (program_id)",
     "CREATE INDEX file_path_idx ON file (path)",
     "CREATE INDEX file_title_idx ON file (title)",
     "CREATE INDEX file_ord_index ON file (ord1, ord2)",
+
+    """
+ CREATE TABLE playlist (
+    id INTEGER PRIMARY KEY,
+    title TEXT UNIQUE NOT NULL
+) STRICT
+    """,
+
+    """
+CREATE TABLE playlist_entry (
+    id INTEGER PRIMARY KEY,
+    playlist_id INTEGER NOT NULL,
+    file_id INTEGER NOT NULL,
+    trackno INTEGER NOT NULL,
+    UNIQUE (playlist_id, file_id),
+    CHECK (trackno > 0)
+) STRICT
+""",
 ]
 
 OPEN_LOCK: Final[threading.Lock] = threading.Lock()
