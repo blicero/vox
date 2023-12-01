@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-27 23:35:05 krylon>
+# Time-stamp: <2023-11-28 15:49:21 krylon>
 #
 # /data/code/python/vox/database.py
 # created on 28. 10. 2023
@@ -92,6 +92,8 @@ CREATE TABLE playlist_entry (
     CHECK (trackno > 0)
 ) STRICT
 """,
+    "CREATE INDEX pe_pl_idx ON playlist_entry (playlist_id)",
+    "CREATE INDEX pe_fi_idx ON playlist_entry (file_id)",
 ]
 
 OPEN_LOCK: Final[threading.Lock] = threading.Lock()

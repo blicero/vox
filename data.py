@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-22 19:46:33 krylon>
+# Time-stamp: <2023-12-01 11:38:02 krylon>
 #
 # /data/code/python/vox/data.py
 # created on 25. 10. 2023
@@ -160,6 +160,26 @@ class Program:  # pylint: disable-msg=R0903
         if "current_file" in fields:
             assert isinstance(fields["current_file"], int)
             self.current_file = fields["current_file"]
+
+
+class Playlist:
+    """A collection of files that are played in sequence"""
+
+    __slots__ = [
+        "playlist_id",
+        "title",
+        "files",
+    ]
+
+    playlist_id: int
+    title: str
+    files: list[File]
+
+    def __init__(self, plid: int, title: str, files: list[File]) -> None:
+        self.playlist_id = plid
+        self.title = title
+        self.files = files
+
 
 # Local Variables: #
 # python-indent: 4 #
