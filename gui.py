@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-26 16:54:53 krylon>
+# Time-stamp: <2023-12-01 16:29:07 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -221,7 +221,7 @@ class VoxUI:
         self.gstloop.quit()
         gtk.main_quit()
 
-    def __handle_prog_view_click(self, widget, evt: gdk.Event) -> None:
+    def __handle_prog_view_click(self, _widget, evt: gdk.Event) -> None:
         # self.log.debug("We got a click: %s / %s", widget, evt)
         if evt.button != 3:
             # self.log.debug("User did not click right button, we don't care.")
