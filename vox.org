@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2023-11-27 23:40:34 krylon>
+# Time-stamp: <2023-11-28 20:33:33 krylon>
 #
 #+TAGS: go(g) internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -80,6 +80,7 @@
     :VISIBILITY: children
     :END:
     :LOGBOOK:
+    CLOCK: [2023-11-28 Di 15:48]--[2023-11-28 Di 20:33] =>  4:45
     CLOCK: [2023-11-27 Mo 22:51]--[2023-11-27 Mo 23:21] =>  0:30
     :END:
 ** UI [0/1]
