@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-28 15:49:21 krylon>
+# Time-stamp: <2023-12-02 16:07:54 krylon>
 #
 # /data/code/python/vox/database.py
 # created on 28. 10. 2023
@@ -165,8 +165,8 @@ db_queries: Final[dict[QueryID, str]] = {
     QueryID.ProgramSetURL:     "UPDATE program SET url = ? WHERE id = ?",
     QueryID.ProgramSetCurFile: "UPDATE program SET cur_file = ? WHERE id = ?",
     QueryID.FileAdd:           """
-    INSERT INTO file (path, folder_id, ord1, ord2)
-              VALUES (?,    ?,         ?,    ?)
+    INSERT INTO file (path, folder_id, program_id, ord1, ord2)
+              VALUES (?,    ?,         ?,          ?,    ?   )
     RETURNING id""",
     QueryID.FileDel:           "DELETE FROM file WHERE id = ?",
     QueryID.FileGetByID:       """
@@ -395,9 +395,11 @@ class Database:
 
     def file_add(self, f: File) -> None:
         """Add a File to the database."""
+        self.log.debug("file_add: %s", f.path)
         cur: sqlite3.Cursor = self.db.cursor()
         args = (f.path,
                 f.folder_id,
+                f.program_id if f.program_id > 0 else None,
                 f.ord1,
                 f.ord2)
         cur.execute(db_queries[QueryID.FileAdd], args)
