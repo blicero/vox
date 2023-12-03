@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-01 16:29:07 krylon>
+# Time-stamp: <2023-12-02 17:32:20 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -296,7 +296,14 @@ class VoxUI:
         return menu
 
     def __mk_context_menu_program(self, _piter: gtk.TreeIter, prog_id: int) -> Optional[gtk.Menu]:  # noqa: E501 # pylint: disable-msg=C0301,R1711
-        self.log.debug("IMPLEMENTME: Context menu for Program %d", prog_id)
+        db = self.__get_db()
+        prog: Optional[Program] = db.program_get_by_id(prog_id)
+        if prog is None:
+            self.log.error("Did not find Program %d in database", prog_id)
+            return
+        self.log.debug("IMPLEMENTME: Context menu for Program %d (%s)",
+                       prog_id,
+                       prog.title)
         return None
 
     def __mk_play_file_handler(self, file: File) -> Callable:
