@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-02 17:32:20 krylon>
+# Time-stamp: <2023-12-04 22:50:40 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -63,6 +63,7 @@ class VoxUI:
         # self.db = database.Database(common.path.db())
         # self.scanner = scanner.Scanner()
         self.lock = Lock()
+        self.playlist: list[File] = []
 
         # Prepare gstreamer pipeline for audio playback
 
@@ -304,7 +305,18 @@ class VoxUI:
         self.log.debug("IMPLEMENTME: Context menu for Program %d (%s)",
                        prog_id,
                        prog.title)
-        return None
+        # files: list[File] = db.file_get_by_program(prog_id)
+        edit_item = gtk.MenuItem.new_with_mnemonic("_Edit")
+        play_item = gtk.MenuItem.new_with_mnemonic("_Play")
+
+        edit_item.connect("activate", self.__mk_prog_edit_handler(prog))
+        play_item.connect("activate")
+
+        menu: gtk.Menu = gtk.Menu()
+        menu.append(edit_item)
+        menu.append(play_item)
+
+        return menu
 
     def __mk_play_file_handler(self, file: File) -> Callable:
         def play(*_ignore: Any) -> None:
@@ -320,6 +332,23 @@ class VoxUI:
             self.file_set_program(fiter, file.file_id, prog.program_id)
             # Update the model, move the file to its new program.
         return handler
+
+    def __mk_prog_play_handler(self, prog: Program) -> Callable:
+        def handler(*_ignore: Any) -> None:
+            db = self.__get_db()
+            files: list[File] = db.file_get_by_program(prog.program_id)
+            if len(files) == 0:
+                self.display_msg(f"Program {prog.title} has 0 files")
+                return
+            self.display_msg(f"IMPLEMENT ME: Play Program {prog.title}")
+            self.playlist = files
+            db.program_set_cur_file(prog, files[0].file_id)
+            self.play_file(files[0])
+
+        return handler
+
+    def __mk_prog_edit_handler(self, prog: Program) -> Callable:
+        pass
 
     def __refresh(self, *_ignore: Any) -> None:
         """Wipe and recreate the data model"""
