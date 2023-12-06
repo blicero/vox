@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2023-12-04 21:51:08 krylon>
+# Time-stamp: <2023-12-06 20:25:03 krylon>
 #
 #+TAGS: go(g) internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -12,19 +12,19 @@
   Vox is an audio book reader that saves your listening progress.
 * Clocktable
   #+BEGIN: clocktable :scope file :maxlevel 202 :emphasize t
-  #+CAPTION: Clock summary at [2023-12-04 Mo 21:51]
-  | Headline                | Time      |         |      |
-  |-------------------------+-----------+---------+------|
-  | *Total time*            | *2d 6:45* |         |      |
-  |-------------------------+-----------+---------+------|
-  | *Components [0/0]*      | *2d 6:45* |         |      |
-  | \_  /Database [0/1]/    |           | /14:32/ |      |
-  | \_    Data types        |           |         | 2:35 |
-  | \_  /Scanner [0/0]/     |           | /1:03/  |      |
-  | \_  /Player [0/1]/      |           | /15:23/ |      |
-  | \_    Playlist [0/0]    |           |         | 7:14 |
-  | \_  /UI [0/1]/          |           | /23:47/ |      |
-  | \_    Managing Programs |           |         | 3:23 |
+  #+CAPTION: Clock summary at [2023-12-06 Mi 20:25]
+  | Headline                | Time       |           |      |
+  |-------------------------+------------+-----------+------|
+  | *Total time*            | *2d 10:40* |           |      |
+  |-------------------------+------------+-----------+------|
+  | *Components [0/0]*      | *2d 10:40* |           |      |
+  | \_  /Database [0/1]/    |            | /14:32/   |      |
+  | \_    Data types        |            |           | 2:35 |
+  | \_  /Scanner [0/0]/     |            | /1:03/    |      |
+  | \_  /Player [0/1]/      |            | /17:13/   |      |
+  | \_    Playlist [0/0]    |            |           | 9:04 |
+  | \_  /UI [0/1]/          |            | /1d 1:52/ |      |
+  | \_    Managing Programs |            |           | 5:28 |
   #+END:
 * Components [0/0]
   :PROPERTIES:
@@ -80,6 +80,7 @@
     :VISIBILITY: children
     :END:
     :LOGBOOK:
+    CLOCK: [2023-12-06 Mi 18:34]--[2023-12-06 Mi 20:24] =>  1:50
     CLOCK: [2023-12-04 Mo 19:34]--[2023-12-04 Mo 19:43] =>  0:09
     CLOCK: [2023-12-02 Sa 17:09]--[2023-12-02 Sa 17:50] =>  0:41
     CLOCK: [2023-12-02 Sa 15:12]--[2023-12-02 Sa 16:21] =>  1:09
@@ -105,6 +106,8 @@
    :END:
 *** TODO Managing Programs
     :LOGBOOK:
+    CLOCK: [2023-12-05 Di 16:00]--[2023-12-05 Di 17:55] =>  1:55
+    CLOCK: [2023-12-05 Di 15:37]--[2023-12-05 Di 15:47] =>  0:10
     CLOCK: [2023-12-04 Mo 20:54]--[2023-12-04 Mo 21:50] =>  0:56
     CLOCK: [2023-11-21 Di 17:15]--[2023-11-21 Di 19:42] =>  2:27
     :END:
