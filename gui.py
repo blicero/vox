@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-06 19:56:00 krylon>
+# Time-stamp: <2023-12-06 23:15:55 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -82,6 +82,13 @@ class VoxUI:
         self.win = gtk.Window()
         self.win.set_title(f"{common.APP_NAME} {common.APP_VERSION}")
         self.mbox = gtk.Box(orientation=gtk.Orientation.VERTICAL)
+        self.cbox = gtk.ButtonBox(orientation=gtk.Orientation.HORIZONTAL)
+        self.cb_play = gtk.Button.new_from_stock(gtk.STOCK_MEDIA_PLAY)
+        self.cb_stop = gtk.Button.new_from_stock(gtk.STOCK_MEDIA_STOP)
+        self.cb_next = gtk.Button.new_from_stock(gtk.STOCK_MEDIA_NEXT)
+        self.cb_prev = gtk.Button.new_from_stock(gtk.STOCK_MEDIA_PREVIOUS)
+        self.seek_box = gtk.Box(orientation=gtk.Orientation.HORIZONTAL)
+        self.seek = gtk.Scale.new_with_range(gtk.Orientation.HORIZONTAL, 0, 100, 1)
 
         self.menubar = gtk.MenuBar()
         self.file_menu_item = gtk.MenuItem.new_with_mnemonic("_File")
@@ -168,7 +175,16 @@ class VoxUI:
         # pylint: disable-msg=E1101
         self.win.add(self.mbox)
         self.mbox.pack_start(self.menubar, False, True, 0)
+        self.mbox.pack_start(self.cbox, False, True, 1)
+        self.mbox.pack_start(self.seek_box, False, True, 1)
         self.mbox.pack_start(self.notebook, False, True, 0)
+
+        self.cbox.add(self.cb_prev)
+        self.cbox.add(self.cb_play)
+        self.cbox.add(self.cb_stop)
+        self.cbox.add(self.cb_next)
+
+        self.seek_box.pack_start(self.seek, True, True, 0)
 
         self.notebook.append_page(self.page1, gtk.Label(label="Program"))
         self.page1.pack_start(self.prog_scroll, False, True, 0)
