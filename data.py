@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-01 17:18:27 krylon>
+# Time-stamp: <2023-12-06 20:15:48 krylon>
 #
 # /data/code/python/vox/data.py
 # created on 25. 10. 2023
@@ -148,12 +148,18 @@ class Program:  # pylint: disable-msg=R0903
         if "program_id" in fields:
             assert isinstance(fields["program_id"], int)
             self.program_id = fields["program_id"]
+        else:
+            self.program_id = 0
         if "title" in fields:
             assert isinstance(fields["title"], str)
             self.title = fields["title"]
+        else:
+            self.title = f"Untitled #{self.program_id}"
         if "creator" in fields:
             assert isinstance(fields["creator"], str)
             self.creator = fields["creator"]
+        else:
+            self.creator = ""
         if "url" in fields:
             assert (fields["url"] is None) or isinstance(fields["url"], str)
             self.url = fields["url"]
@@ -162,6 +168,11 @@ class Program:  # pylint: disable-msg=R0903
         if "current_file" in fields:
             assert isinstance(fields["current_file"], int)
             self.current_file = fields["current_file"]
+        elif "cur_file" in fields:
+            assert isinstance(fields["cur_file"], int)
+            self.current_file = fields["cur_file"]
+        else:
+            self.current_file = -1
 
 
 class Playlist:

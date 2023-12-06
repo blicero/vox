@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-05 16:40:18 krylon>
+# Time-stamp: <2023-12-06 20:15:08 krylon>
 #
 # /data/code/python/vox/database.py
 # created on 28. 10. 2023
@@ -333,7 +333,7 @@ class Database:
                 title=row[1],
                 creator=row[2],
                 url=row[3],
-                cur_file=row[4])
+                current_file=row[4])
             progs.append(p)
         return progs
 
@@ -348,7 +348,7 @@ class Database:
                 title=row[0],
                 creator=row[1],
                 url=row[2],
-                cur_file=row[3],
+                current_file=row[3],
             )
             return prog
         return None
