@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-02 16:08:31 krylon>
+# Time-stamp: <2023-12-06 19:26:14 krylon>
 #
 # /data/code/python/vox/scanner.py
 # created on 04. 11. 2023
@@ -159,6 +159,8 @@ def read_tags(path: str) -> dict[str, str]:
 
     if "discnumber" in meta:
         tags["ord1"] = meta["discnumber"][0]
+    elif "TPOS" in meta:
+        tags["ord1"] = meta["TPOS"].text[0]
 
     m1 = DISC_NO_PAT.search(tags["ord1"])
     if m1 is not None:
