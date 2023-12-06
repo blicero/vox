@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-02 16:07:54 krylon>
+# Time-stamp: <2023-12-05 16:40:18 krylon>
 #
 # /data/code/python/vox/database.py
 # created on 28. 10. 2023
@@ -397,9 +397,12 @@ class Database:
         """Add a File to the database."""
         self.log.debug("file_add: %s", f.path)
         cur: sqlite3.Cursor = self.db.cursor()
+        pid: Optional[int] = None
+        if f.program_id is not None and f.program_id > 0:
+            pid = f.program_id
         args = (f.path,
                 f.folder_id,
-                f.program_id if f.program_id > 0 else None,
+                pid,
                 f.ord1,
                 f.ord2)
         cur.execute(db_queries[QueryID.FileAdd], args)
