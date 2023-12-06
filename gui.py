@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-04 22:50:40 krylon>
+# Time-stamp: <2023-12-06 19:56:00 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -60,18 +60,20 @@ class VoxUI:
     def __init__(self) -> None:  # pylint: disable-msg=R0915
         self.local = local()
         self.log = common.get_logger("GUI")
-        # self.db = database.Database(common.path.db())
-        # self.scanner = scanner.Scanner()
-        self.lock = Lock()
+        self.lock: Final[Lock] = Lock()
         self.playlist: list[File] = []
+        self.playidx: int = 0
+        self.prog: Optional[Program] = None
 
         # Prepare gstreamer pipeline for audio playback
-
-        self.state = PlayerState.STOPPED
+        self.state: PlayerState = PlayerState.STOPPED
         gst.init(None)
         self.gstloop = gobject.MainLoop()
         self.player = gst.ElementFactory.make("playbin", "player")
         self.player.set_property("volume", 0.5)
+        self.gbus = self.player.get_bus()
+        self.gbus.add_signal_watch()
+        self.gbus.connect("message", self.handle_player_msg)
 
         #######################################################
         # Create widgets  #####################################
@@ -301,7 +303,7 @@ class VoxUI:
         prog: Optional[Program] = db.program_get_by_id(prog_id)
         if prog is None:
             self.log.error("Did not find Program %d in database", prog_id)
-            return
+            return None
         self.log.debug("IMPLEMENTME: Context menu for Program %d (%s)",
                        prog_id,
                        prog.title)
@@ -310,7 +312,7 @@ class VoxUI:
         play_item = gtk.MenuItem.new_with_mnemonic("_Play")
 
         edit_item.connect("activate", self.__mk_prog_edit_handler(prog))
-        play_item.connect("activate")
+        play_item.connect("activate", self.__mk_prog_play_handler(prog))
 
         menu: gtk.Menu = gtk.Menu()
         menu.append(edit_item)
@@ -335,20 +337,15 @@ class VoxUI:
 
     def __mk_prog_play_handler(self, prog: Program) -> Callable:
         def handler(*_ignore: Any) -> None:
-            db = self.__get_db()
-            files: list[File] = db.file_get_by_program(prog.program_id)
-            if len(files) == 0:
-                self.display_msg(f"Program {prog.title} has 0 files")
-                return
-            self.display_msg(f"IMPLEMENT ME: Play Program {prog.title}")
-            self.playlist = files
-            db.program_set_cur_file(prog, files[0].file_id)
-            self.play_file(files[0])
+            self.play_program(prog)
 
         return handler
 
     def __mk_prog_edit_handler(self, prog: Program) -> Callable:
-        pass
+        def handler(*_ignore: Any) -> None:
+            self.log.debug("Edit Program %s: IMPLEMENTME",
+                           prog.title)
+        return handler
 
     def __refresh(self, *_ignore: Any) -> None:
         """Wipe and recreate the data model"""
@@ -427,20 +424,56 @@ class VoxUI:
 
     def display_msg(self, msg: str) -> None:
         """Display a message in a dialog."""
+        self.log.info(msg)
+
         dlg = gtk.Dialog(
             parent=self.win,
             title="Attention",
-            flags=gtk.DialogFlags.MODAL,
+            modal=True,
+        )
+
+        dlg.add_buttons(
+            gtk.STOCK_OK,
+            gtk.ResponseType.OK,
         )
 
         area = dlg.get_content_area()
-        lbl = gtk.Label(msg)
+        lbl = gtk.Label(label=msg)
         area.add(lbl)
+        dlg.show_all()
 
         try:
             dlg.run()
         finally:
             dlg.destroy()
+
+    def handle_player_msg(self, _bus, msg) -> None:
+        """React to messages sent by the Player"""
+        mtype = msg.type
+        # self.log.debug("Got Message from Player: %s", mtype)
+        match mtype:
+            case gst.MessageType.EOS:
+                with self.lock:
+                    if self.prog is None:
+                        return
+                    if self.playidx >= len(self.playlist):
+                        db = self.__get_db()
+                        db.program_set_cur_file(self.prog, -1)
+                        self.prog = None
+                        self.playlist = []
+                        self.playidx = 0
+                        return
+                    self.playidx += 1
+                self.play_file(self.playlist[self.playidx])
+                db = self.__get_db()
+                db.program_set_cur_file(self.prog,
+                                        self.playlist[self.playidx].file_id)
+            case gst.MessageType.ERROR:
+                self.stop()
+                err, debug = msg.parse_error()
+                m = f"GStreamer signalled an error: {err} - {debug}"
+                self.log.error(m)
+                self.display_msg(m)
 
     def toggle_play_pause(self, *_ignore: Any) -> None:
         """Toggle the player's status."""
@@ -458,6 +491,44 @@ class VoxUI:
                     self.log.debug(
                         "PlayerState is %s, cannot toggle play/pause",
                         self.state)
+
+    def play_program(self, prog: Program) -> None:
+        """Start playing a Program"""
+        db = self.__get_db()
+        files: list[File] = db.file_get_by_program(prog.program_id)
+        if len(files) == 0:
+            self.display_msg(f"Program {prog.title} has 0 files")
+            return
+
+        self.log.debug("Play Program %s (%d files)",
+                       prog.title,
+                       len(files))
+        with self.lock:
+            self.prog = prog
+            self.playlist = files
+            if prog.current_file < 1:
+                self.log.debug("Play Program %s from the beginning",
+                               prog.title)
+                db.program_set_cur_file(prog, files[0].file_id)
+                self.playidx = 0
+            else:
+                self.log.debug("Current file is %d, looking for index",
+                               prog.current_file)
+                success: bool = False
+                for i in range(len(files)):  # pylint: disable-msg=C0200
+                    if prog.current_file == files[i].file_id:
+                        self.log.debug("Current file is %s, index %d",
+                                       files[i].display_title(),
+                                       i)
+                        self.playidx = i
+                        success = True
+                        break
+                if not success:
+                    self.log.error("Did not find current track in list, starting from beginning")  # noqa: E501 pylint: disable-msg=C0301
+                    prog.current_file = -1
+                    self.play_program(prog)
+                    return
+        self.play_file(files[self.playidx])
 
     def play_file(self, file: File) -> None:
         """Play a single file."""
