@@ -555,6 +555,7 @@ class VoxUI:
     def play_previous(self, _ignore) -> None:
         """Skip backwards one track in the playlist."""
         self.log.debug("Skipping backwards one title.")
+        db = self.__get_db()
         with self.lock:
             if len(self.playlist) == 0:
                 self.log.info("Playlist is empty.")
@@ -563,11 +564,14 @@ class VoxUI:
                 self.log.info("We are at the beginning of playlist")
                 return
             self.playidx -= 1
+        db.program_set_cur_file(self.prog,
+                                self.playlist[self.playidx].file_id)
         self.play_file(self.playlist[self.playidx])
 
     def play_next(self, _ignore) -> None:
         """Skip forward one track in the playlist."""
         self.log.debug("Skipt to next track")
+        db = self.__get_db()
         with self.lock:
             if len(self.playlist) == 0:
                 self.log.info("Playlist is empty.")
@@ -576,6 +580,8 @@ class VoxUI:
                 self.log.info("Playing last track")
                 return
             self.playidx += 1
+        db.program_set_cur_file(self.prog,
+                                self.playlist[self.playidx].file_id)
         self.play_file(self.playlist[self.playidx])
 
     def play_file(self, file: File) -> None:
