@@ -22,8 +22,7 @@ from threading import Lock, Thread, current_thread, local
 from typing import Any, Callable, Final, Optional
 
 import gi  # type: ignore
-
-from krylib import cmp, is_natural, is_negative
+from krylib import cmp, sign
 
 from vox import common, database, scanner
 from vox.data import File, Program
@@ -653,27 +652,31 @@ class VoxUI:
             self.prog_store[fiter][5] = f.ord2
 
 
-# pylint: disable-msg=R0911
 def cmp_iter(m: gtk.TreeModel, a, b: gtk.TreeIter, _) -> int:
     """Comparison function for sorting."""
     v1 = m.get(a, 0, 1, 2, 3, 4, 5, 6)
     v2 = m.get(b, 0, 1, 2, 3, 4, 5, 6)
-    if is_natural(v1[0]) and is_negative(v2[0]):
-        return cmp(v1[0], abs(v2[0]))
-    if is_natural(v1[0]) and is_natural(v2[0]):
-        return cmp(v1[0], v2[0])
-    if is_negative(v1[0]) and is_natural(v2[0]):
-        return cmp(abs(v1[0]), v2[0])
-    if is_negative(v1[0]) and is_negative(v2[0]):
-        match cmp(abs(v1[0]), abs(v2[0])):
-            case -1:
-                return -1
-            case 0:
-                return cmp(v1[3], v2[3])
-            case 1:
-                return 1
+    res: int = 0
+    match (sign(v1[0]), sign(v2[0])):
+        case (1, 1):
+            res = cmp(v1[0], v2[0])
+        case (-1, -1):
+            if v1[0] == v2[0]:
+                match cmp(v1[4], v2[4]):
+                    case -1:
+                        res = -1
+                    case 1:
+                        res = 1
+                    case 0:
+                        res = cmp(v1[5], v2[5])
+            else:
+                res = cmp(v2[0], v1[0])
+        case (1, -1):
+            res = cmp(v1[0], -v2[0])
+        case (-1, 1):
+            res = cmp(-v1[0], v2[0])
 
-    return 0
+    return res
 
 
 def main() -> None:
