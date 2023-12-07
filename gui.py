@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-07 20:15:16 krylon>
+# Time-stamp: <2023-12-07 20:38:19 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -210,6 +210,7 @@ class VoxUI:
         self.cb_stop.connect("clicked", self.stop)
         self.cb_prev.connect("clicked", self.play_previous)
         self.cb_next.connect("clicked", self.play_next)
+        self.seek.connect("format-value", self.format_position)
         self.seek_handler_id = self.seek.connect("value-changed",
                                                  self.handle_seek)
         self.prog_view.connect("button-press-event",
@@ -521,6 +522,17 @@ class VoxUI:
     def handle_seek(self, _ignore: gtk.Widget) -> None:
         """Seek to the selected position."""
         self.log.debug("Seek is not implemented, yet.")
+
+    def format_position(self, _ignore: gtk.Widget, pos: float) -> str:
+        hours: int = 0
+        minutes: int = 0
+        seconds: int = int(pos)
+
+        if seconds >= 3600:
+            hours, seconds = divmod(seconds, 3600)
+        if seconds >= 60:
+            minutes, seconds = divmod(seconds, 60)
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
     def toggle_play_pause(self, *_ignore: Any) -> None:
         """Toggle the player's status."""
