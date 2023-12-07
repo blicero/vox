@@ -240,11 +240,6 @@ class VoxUI:
         finally:
             self.log.info("GStreamer loop has finished.")
 
-    # def decode_src_created(self, _element, pad) -> None:
-    #     """Callback for gstreamer."""
-    #     self.log.debug("Do the pad link stuff")
-    #     pad.link(self.sink.get_static_pad("sink"))
-
     def __quit(self, *_ignore: Any) -> None:
         self.win.destroy()
         self.stop()
