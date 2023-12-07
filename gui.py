@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-07 19:38:38 krylon>
+# Time-stamp: <2023-12-07 20:15:16 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -31,6 +31,7 @@ gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 gi.require_version("GdkPixbuf", "2.0")
 gi.require_version("Gst", "1.0")
+gi.require_version("GLib", "2.0")
 # from gi.repository import \
 #     GLib as \
 #     glib  # noqa: F401,E402,E501 # pylint: disable-msg=C0411,W0611 # type: ignore
@@ -42,6 +43,7 @@ from gi.repository import GObject as gobject  # noqa: E402
 from gi.repository import Gst as gst  # noqa: E402
 from gi.repository import \
     Gtk as gtk  # noqa: E402,E501 # pylint: disable-msg=C0411,E0611
+from gi.repository import GLib as glib  # noqa: E402
 
 
 class PlayerState(Enum):
@@ -208,12 +210,15 @@ class VoxUI:
         self.cb_stop.connect("clicked", self.stop)
         self.cb_prev.connect("clicked", self.play_previous)
         self.cb_next.connect("clicked", self.play_next)
+        self.seek_handler_id = self.seek.connect("value-changed",
+                                                 self.handle_seek)
         self.prog_view.connect("button-press-event",
                                self.__handle_prog_view_click)
 
         self.loop_thr = Thread(target=self.__gst_loop)
         self.loop_thr.daemon = True
         self.loop_thr.start()
+        glib.timeout_add(1000, self.handle_tick)
         self.win.show_all()
 
     def __get_db(self) -> database.Database:
@@ -484,6 +489,7 @@ class VoxUI:
                         self.prog = None
                         self.playlist = []
                         self.playidx = 0
+                        self.state = PlayerState.STOPPED
                         return
                     self.playidx += 1
                 self.play_file(self.playlist[self.playidx])
@@ -496,6 +502,29 @@ class VoxUI:
                 m = f"GStreamer signalled an error: {err} - {debug}"
                 self.log.error(m)
                 self.display_msg(m)
+
+    def handle_tick(self) -> bool:
+        """Update the slider for seeking."""
+        with self.lock:
+            if self.state != PlayerState.PLAYING:
+                return True
+            success, duration = self.player.query_duration(gst.Format.TIME)
+            if not success:
+                self.log.error("Cannot query track duration")
+                return True
+            self.seek.set_range(0, duration / gst.SECOND)
+            success, position = self.player.query_position(gst.Format.TIME)
+            if not success:
+                self.log.error("Cannot query playback position")
+                return True
+            self.seek.handler_block(self.seek_handler_id)
+            self.seek.set_value(float(position) / gst.SECOND)
+            self.seek.handler_unblock(self.seek_handler_id)
+        return True
+
+    def handle_seek(self, _ignore: gtk.Widget) -> None:
+        """Seek to the selected position."""
+        self.log.debug("Seek is not implemented, yet.")
 
     def toggle_play_pause(self, *_ignore: Any) -> None:
         """Toggle the player's status."""
@@ -600,6 +629,10 @@ class VoxUI:
         with self.lock:
             self.state = PlayerState.STOPPED
             self.player.set_state(gst.State.NULL)
+            self.seek.handler_block(self.seek_handler_id)
+            self.seek.set_range(0, 0)
+            self.seek.set_value(0)
+            self.seek.handler_unblock(self.seek_handler_id)
 
     # Managing our stuff
 
