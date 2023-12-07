@@ -433,7 +433,8 @@ class VoxUI:
             dlg.destroy()
 
     def __scan_worker(self, path: str) -> None:
-        """Boo"""
+        """Scan a single directory tree.
+        This method is meant to be called in a background thread."""
 
         sc = scanner.Scanner()
 
