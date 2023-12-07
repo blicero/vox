@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-06 20:15:08 krylon>
+# Time-stamp: <2023-12-07 20:37:00 krylon>
 #
 # /data/code/python/vox/database.py
 # created on 28. 10. 2023
@@ -19,6 +19,7 @@ vox.database
 import logging
 import sqlite3
 import threading
+import time
 from datetime import datetime
 from enum import Enum, auto
 from typing import Final, Optional, Union
@@ -528,7 +529,8 @@ class Database:
     def file_set_position(self, f: File, pos: int) -> None:
         """Update a File's playback position."""
         cur: sqlite3.Cursor = self.db.cursor()
-        cur.execute(db_queries[QueryID.FileSetPosition], (pos, f.file_id))
+        cur.execute(db_queries[QueryID.FileSetPosition],
+                    (pos, int(time.time()), f.file_id))
         f.position = pos
 
     def file_set_ord(self, f: File, o1: int, o2: int) -> None:
