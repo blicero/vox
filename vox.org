@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2023-12-06 20:25:03 krylon>
+# Time-stamp: <2023-12-07 21:10:05 krylon>
 #
 #+TAGS: go(g) internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -12,18 +12,19 @@
   Vox is an audio book reader that saves your listening progress.
 * Clocktable
   #+BEGIN: clocktable :scope file :maxlevel 202 :emphasize t
-  #+CAPTION: Clock summary at [2023-12-06 Mi 20:25]
+  #+CAPTION: Clock summary at [2023-12-07 Do 21:10]
   | Headline                | Time       |           |      |
   |-------------------------+------------+-----------+------|
-  | *Total time*            | *2d 10:40* |           |      |
+  | *Total time*            | *2d 13:57* |           |      |
   |-------------------------+------------+-----------+------|
-  | *Components [0/0]*      | *2d 10:40* |           |      |
+  | *Components [0/0]*      | *2d 13:57* |           |      |
   | \_  /Database [0/1]/    |            | /14:32/   |      |
   | \_    Data types        |            |           | 2:35 |
   | \_  /Scanner [0/0]/     |            | /1:03/    |      |
   | \_  /Player [0/1]/      |            | /17:13/   |      |
   | \_    Playlist [0/0]    |            |           | 9:04 |
-  | \_  /UI [0/1]/          |            | /1d 1:52/ |      |
+  | \_  /UI [0/2]/          |            | /1d 5:09/ |      |
+  | \_    Player            |            |           | 3:17 |
   | \_    Managing Programs |            |           | 5:28 |
   #+END:
 * Components [0/0]
@@ -87,7 +88,7 @@
     CLOCK: [2023-11-28 Di 15:48]--[2023-11-28 Di 20:33] =>  4:45
     CLOCK: [2023-11-27 Mo 22:51]--[2023-11-27 Mo 23:21] =>  0:30
     :END:
-** UI [0/1]
+** UI [0/2]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
@@ -104,6 +105,10 @@
    CLOCK: [2023-11-08 Mi 09:28]--[2023-11-08 Mi 11:14] =>  1:46
    CLOCK: [2023-11-07 Di 19:34]--[2023-11-07 Di 21:26] =>  1:52
    :END:
+*** TODO Player
+    :LOGBOOK:
+    CLOCK: [2023-12-07 Do 17:52]--[2023-12-07 Do 21:09] =>  3:17
+    :END:
 *** TODO Managing Programs
     :LOGBOOK:
     CLOCK: [2023-12-05 Di 16:00]--[2023-12-05 Di 17:55] =>  1:55
