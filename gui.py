@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-06 23:15:55 krylon>
+# Time-stamp: <2023-12-07 19:38:38 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -87,7 +87,10 @@ class VoxUI:
         self.cb_next = gtk.Button.new_from_stock(gtk.STOCK_MEDIA_NEXT)
         self.cb_prev = gtk.Button.new_from_stock(gtk.STOCK_MEDIA_PREVIOUS)
         self.seek_box = gtk.Box(orientation=gtk.Orientation.HORIZONTAL)
-        self.seek = gtk.Scale.new_with_range(gtk.Orientation.HORIZONTAL, 0, 100, 1)
+        self.seek = gtk.Scale.new_with_range(gtk.Orientation.HORIZONTAL,
+                                             0,
+                                             100,
+                                             1)
 
         self.menubar = gtk.MenuBar()
         self.file_menu_item = gtk.MenuItem.new_with_mnemonic("_File")
@@ -201,6 +204,10 @@ class VoxUI:
         self.am_prog_add_item.connect("activate", self.create_program)
         self.pm_playpause_item.connect("activate", self.toggle_play_pause)
         self.pm_stop_item.connect("activate", self.stop)
+        self.cb_play.connect("clicked", self.toggle_play_pause)
+        self.cb_stop.connect("clicked", self.stop)
+        self.cb_prev.connect("clicked", self.play_previous)
+        self.cb_next.connect("clicked", self.play_next)
         self.prog_view.connect("button-press-event",
                                self.__handle_prog_view_click)
 
@@ -544,6 +551,32 @@ class VoxUI:
                     self.play_program(prog)
                     return
         self.play_file(files[self.playidx])
+
+    def play_previous(self, _ignore) -> None:
+        """Skip backwards one track in the playlist."""
+        self.log.debug("Skipping backwards one title.")
+        with self.lock:
+            if len(self.playlist) == 0:
+                self.log.info("Playlist is empty.")
+                return
+            if self.playidx == 0:
+                self.log.info("We are at the beginning of playlist")
+                return
+            self.playidx -= 1
+        self.play_file(self.playlist[self.playidx])
+
+    def play_next(self, _ignore) -> None:
+        """Skip forward one track in the playlist."""
+        self.log.debug("Skipt to next track")
+        with self.lock:
+            if len(self.playlist) == 0:
+                self.log.info("Playlist is empty.")
+                return
+            if self.playidx == len(self.playlist) - 1:
+                self.log.info("Playing last track")
+                return
+            self.playidx += 1
+        self.play_file(self.playlist[self.playidx])
 
     def play_file(self, file: File) -> None:
         """Play a single file."""
