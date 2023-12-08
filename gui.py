@@ -32,14 +32,7 @@ gi.require_version("Gdk", "3.0")
 gi.require_version("GdkPixbuf", "2.0")
 gi.require_version("Gst", "1.0")
 gi.require_version("GLib", "2.0")
-# from gi.repository import \
-#     GLib as \
-#     glib  # noqa: F401,E402,E501 # pylint: disable-msg=C0411,W0611 # type: ignore
-# from gi.repository import \
-#     GdkPixbuf as \
-#     gpb  # noqa: F401,E402,E501 # pylint: disable-msg=C0411,W0611 # type: ignore
 from gi.repository import Gdk as gdk  # noqa: E402
-from gi.repository import GObject as gobject  # noqa: E402
 from gi.repository import Gst as gst  # noqa: E402
 from gi.repository import \
     Gtk as gtk  # noqa: E402,E501 # pylint: disable-msg=C0411,E0611
@@ -69,7 +62,7 @@ class VoxUI:
         # Prepare gstreamer pipeline for audio playback
         self.state: PlayerState = PlayerState.STOPPED
         gst.init(None)
-        self.gstloop = gobject.MainLoop()
+        self.gstloop = glib.MainLoop()
         self.player = gst.ElementFactory.make("playbin", "player")
         self.player.set_property("volume", 0.5)
         self.gbus = self.player.get_bus()
@@ -327,10 +320,7 @@ class VoxUI:
         if prog is None:
             self.log.error("Did not find Program %d in database", prog_id)
             return None
-        self.log.debug("IMPLEMENTME: Context menu for Program %d (%s)",
-                       prog_id,
-                       prog.title)
-        # files: list[File] = db.file_get_by_program(prog_id)
+
         edit_item = gtk.MenuItem.new_with_mnemonic("_Edit")
         play_item = gtk.MenuItem.new_with_mnemonic("_Play")
 
@@ -600,6 +590,9 @@ class VoxUI:
             if self.playidx == 0:
                 self.log.info("We are at the beginning of playlist")
                 return
+            if self.prog is None:
+                self.log.info("No Program is currently playing.")
+                return
             self.playidx -= 1
         db.program_set_cur_file(self.prog,
                                 self.playlist[self.playidx].file_id)
@@ -615,6 +608,9 @@ class VoxUI:
                 return
             if self.playidx == len(self.playlist) - 1:
                 self.log.info("Playing last track")
+                return
+            if self.prog is None:
+                self.log.info("No Program is currently playing.")
                 return
             self.playidx += 1
         db.program_set_cur_file(self.prog,
