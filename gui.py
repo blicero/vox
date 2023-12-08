@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-07 20:38:19 krylon>
+# Time-stamp: <2023-12-08 18:40:38 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -81,7 +81,7 @@ class VoxUI:
         self.cb_stop = gtk.Button.new_from_stock(gtk.STOCK_MEDIA_STOP)
         self.cb_next = gtk.Button.new_from_stock(gtk.STOCK_MEDIA_NEXT)
         self.cb_prev = gtk.Button.new_from_stock(gtk.STOCK_MEDIA_PREVIOUS)
-        self.seek_box = gtk.Box(orientation=gtk.Orientation.HORIZONTAL)
+        self.control_box = gtk.Box(orientation=gtk.Orientation.HORIZONTAL)
         self.seek = gtk.Scale.new_with_range(gtk.Orientation.HORIZONTAL,
                                              0,
                                              100,
@@ -138,7 +138,7 @@ class VoxUI:
             int,  # Ord2
             str,  # Duration
         )
-        self.sort_store = gtk.TreeModelSort(self.prog_store)
+        self.sort_store = gtk.TreeModelSort(model=self.prog_store)
         self.sort_store.set_default_sort_func(cmp_iter)
         self.prog_view = gtk.TreeView(model=self.sort_store)
 
@@ -172,8 +172,8 @@ class VoxUI:
         # pylint: disable-msg=E1101
         self.win.add(self.mbox)
         self.mbox.pack_start(self.menubar, False, True, 0)
-        self.mbox.pack_start(self.cbox, False, True, 1)
-        self.mbox.pack_start(self.seek_box, False, True, 1)
+        # self.mbox.pack_start(self.cbox, False, True, 1)
+        self.mbox.pack_start(self.control_box, False, True, 1)
         self.mbox.pack_start(self.notebook, False, True, 0)
 
         self.cbox.add(self.cb_prev)
@@ -181,7 +181,8 @@ class VoxUI:
         self.cbox.add(self.cb_stop)
         self.cbox.add(self.cb_next)
 
-        self.seek_box.pack_start(self.seek, True, True, 0)
+        self.control_box.pack_start(self.cbox, False, False, 0)
+        self.control_box.pack_start(self.seek, True, True, 0)
 
         self.notebook.append_page(self.page1, gtk.Label(label="Program"))
         self.page1.pack_start(self.prog_scroll, False, True, 0)
@@ -511,9 +512,13 @@ class VoxUI:
 
     def handle_seek(self, _ignore: gtk.Widget) -> None:
         """Seek to the selected position."""
-        self.log.debug("Seek is not implemented, yet.")
+        new_pos: Final[float] = self.seek.get_value()
+        self.player.seek_simple(gst.Format.TIME,
+                                gst.SeekFlags.FLUSH | gst.SeekFlags.KEY_UNIT,
+                                new_pos * gst.SECOND)
 
     def format_position(self, _ignore: gtk.Widget, pos: float) -> str:
+        """Format the position for the seek Scale as HH:MM:ss"""
         hours: int = 0
         minutes: int = 0
         seconds: int = int(pos)
