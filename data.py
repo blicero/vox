@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-06 20:15:48 krylon>
+# Time-stamp: <2023-12-09 18:00:19 krylon>
 #
 # /data/code/python/vox/data.py
 # created on 25. 10. 2023
@@ -82,6 +82,8 @@ class File:  # pylint: disable-msg=R0902,R0903
         if "program_id" in fields:
             assert isinstance(fields["program_id"], int)
             self.program_id = fields["program_id"]
+        else:
+            self.program_id = None
         if "folder_id" in fields:
             assert isinstance(fields["folder_id"], int)
             self.folder_id = fields["folder_id"]
