@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-08 18:40:38 krylon>
+# Time-stamp: <2023-12-10 11:01:50 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -18,7 +18,7 @@ vox.ui
 
 # pylint: disable-msg=C0413,R0902,C0411
 from enum import Enum, auto
-from threading import Lock, Thread, current_thread, local
+from threading import RLock, Thread, current_thread, local
 from typing import Any, Callable, Final, Optional
 
 import gi  # type: ignore
@@ -54,7 +54,7 @@ class VoxUI:
     def __init__(self) -> None:  # pylint: disable-msg=R0915
         self.local = local()
         self.log = common.get_logger("GUI")
-        self.lock: Final[Lock] = Lock()
+        self.lock: Final[RLock] = RLock()
         self.playlist: list[File] = []
         self.playidx: int = 0
         self.prog: Optional[Program] = None
@@ -76,11 +76,17 @@ class VoxUI:
         self.win = gtk.Window()
         self.win.set_title(f"{common.APP_NAME} {common.APP_VERSION}")
         self.mbox = gtk.Box(orientation=gtk.Orientation.VERTICAL)
+
+        self.sbox = gtk.Box(orientation=gtk.Orientation.HORIZONTAL)
+        self.slabel = gtk.Label(label="Nothing to see here, move along...")
+
         self.cbox = gtk.ButtonBox(orientation=gtk.Orientation.HORIZONTAL)
+        # pylint: disable-msg=E1101
         self.cb_play = gtk.Button.new_from_stock(gtk.STOCK_MEDIA_PLAY)
         self.cb_stop = gtk.Button.new_from_stock(gtk.STOCK_MEDIA_STOP)
         self.cb_next = gtk.Button.new_from_stock(gtk.STOCK_MEDIA_NEXT)
         self.cb_prev = gtk.Button.new_from_stock(gtk.STOCK_MEDIA_PREVIOUS)
+
         self.control_box = gtk.Box(orientation=gtk.Orientation.HORIZONTAL)
         self.seek = gtk.Scale.new_with_range(gtk.Orientation.HORIZONTAL,
                                              0,
@@ -172,9 +178,11 @@ class VoxUI:
         # pylint: disable-msg=E1101
         self.win.add(self.mbox)
         self.mbox.pack_start(self.menubar, False, True, 0)
-        # self.mbox.pack_start(self.cbox, False, True, 1)
         self.mbox.pack_start(self.control_box, False, True, 1)
+        self.mbox.pack_start(self.sbox, False, True, 1)
         self.mbox.pack_start(self.notebook, False, True, 0)
+
+        self.sbox.pack_start(self.slabel, False, True, 0)
 
         self.cbox.add(self.cb_prev)
         self.cbox.add(self.cb_play)
@@ -455,10 +463,10 @@ class VoxUI:
         area = dlg.get_content_area()
         lbl = gtk.Label(label=msg)
         area.add(lbl)
-        dlg.show_all()
+        dlg.show_all()  # pylint: disable-msg=E1101
 
         try:
-            dlg.run()
+            dlg.run()  # pylint: disable-msg=E1101
         finally:
             dlg.destroy()
 
@@ -468,22 +476,23 @@ class VoxUI:
         # self.log.debug("Got Message from Player: %s", mtype)
         match mtype:
             case gst.MessageType.EOS:
+                db = self.__get_db()
                 with self.lock:
                     if self.prog is None:
                         return
-                    if self.playidx >= len(self.playlist):
-                        db = self.__get_db()
+                    if self.playidx < len(self.playlist):
+                        self.playidx += 1
+                        self.play_file(self.playlist[self.playidx])
+                        fid: Final[int] = self.playlist[self.playidx].file_id
+                        db.program_set_cur_file(self.prog,
+                                                fid)
+                    else:
                         db.program_set_cur_file(self.prog, -1)
                         self.prog = None
                         self.playlist = []
                         self.playidx = 0
                         self.state = PlayerState.STOPPED
-                        return
-                    self.playidx += 1
-                self.play_file(self.playlist[self.playidx])
-                db = self.__get_db()
-                db.program_set_cur_file(self.prog,
-                                        self.playlist[self.playidx].file_id)
+                        self.format_status_line()
             case gst.MessageType.ERROR:
                 self.stop()
                 err, debug = msg.parse_error()
@@ -493,22 +502,30 @@ class VoxUI:
 
     def handle_tick(self) -> bool:
         """Update the slider for seeking."""
-        with self.lock:
-            if self.state != PlayerState.PLAYING:
-                return True
-            success, duration = self.player.query_duration(gst.Format.TIME)
-            if not success:
-                self.log.error("Cannot query track duration")
-                return True
-            self.seek.set_range(0, duration / gst.SECOND)
-            success, position = self.player.query_position(gst.Format.TIME)
-            if not success:
-                self.log.error("Cannot query playback position")
-                return True
-            self.seek.handler_block(self.seek_handler_id)
-            self.seek.set_value(float(position) / gst.SECOND)
-            self.seek.handler_unblock(self.seek_handler_id)
-        return True
+        try:
+            self.format_status_line()
+            with self.lock:
+                if self.state != PlayerState.PLAYING:
+                    return True
+                success, duration = self.player.query_duration(gst.Format.TIME)
+                if not success:
+                    self.log.error("Cannot query track duration")
+                    return True
+                self.seek.set_range(0, duration / gst.SECOND)
+                success, position = self.player.query_position(gst.Format.TIME)
+                if not success:
+                    self.log.error("Cannot query playback position")
+                    return True
+                self.seek.handler_block(self.seek_handler_id)
+                self.seek.set_value(float(position) / gst.SECOND)
+                self.seek.handler_unblock(self.seek_handler_id)
+                db = self.__get_db()
+                f: File = self.playlist[self.playidx]
+                pos: int = int(position / gst.SECOND)
+                with db:
+                    db.file_set_position(f, pos)
+        finally:
+            return True  # noqa: B012 pylint: disable-msg=W0134,W0150
 
     def handle_seek(self, _ignore: gtk.Widget) -> None:
         """Seek to the selected position."""
@@ -528,6 +545,27 @@ class VoxUI:
         if seconds >= 60:
             minutes, seconds = divmod(seconds, 60)
         return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+    def format_status_line(self, txt: Optional[str] = None) -> None:
+        """Update the status line.
+        If playing or paused, display the program title, the track number
+        and the title of the current track."""
+        with self.lock:
+            if txt is None:
+                match self.state:
+                    case PlayerState.PLAYING | PlayerState.PAUSED:
+                        assert self.prog is not None
+                        ptitle: Final[str] = self.prog.title
+                        pidx: Final[int] = self.playidx + 1
+                        ftitle: Final[str] = \
+                            self.playlist[self.playidx].display_title()
+                        status: Final[str] = \
+                            f"{ptitle} - {pidx:4d} - {ftitle}"
+                        self.slabel.set_label(status)
+                    case _:
+                        self.slabel.set_label("")
+            else:
+                self.slabel.set_label(txt)
 
     def toggle_play_pause(self, *_ignore: Any) -> None:
         """Toggle the player's status."""
@@ -583,6 +621,7 @@ class VoxUI:
                     self.play_program(prog)
                     return
         self.play_file(files[self.playidx])
+        self.format_status_line()
 
     def play_previous(self, _ignore) -> None:
         """Skip backwards one track in the playlist."""
@@ -602,6 +641,7 @@ class VoxUI:
         db.program_set_cur_file(self.prog,
                                 self.playlist[self.playidx].file_id)
         self.play_file(self.playlist[self.playidx])
+        self.format_status_line()
 
     def play_next(self, _ignore) -> None:
         """Skip forward one track in the playlist."""
@@ -621,6 +661,7 @@ class VoxUI:
         db.program_set_cur_file(self.prog,
                                 self.playlist[self.playidx].file_id)
         self.play_file(self.playlist[self.playidx])
+        self.format_status_line()
 
     def play_file(self, file: File) -> None:
         """Play a single file."""
@@ -632,6 +673,7 @@ class VoxUI:
             self.player.set_property("uri", uri)
             self.state = PlayerState.PLAYING
             self.player.set_state(gst.State.PLAYING)
+            self.format_status_line()
 
     def stop(self, *_ignore) -> None:
         """Stop the player (if it's playing)"""
@@ -642,6 +684,7 @@ class VoxUI:
             self.seek.set_range(0, 0)
             self.seek.set_value(0)
             self.seek.handler_unblock(self.seek_handler_id)
+            self.format_status_line("")
 
     # Managing our stuff
 
@@ -675,10 +718,10 @@ class VoxUI:
         grid.attach(url_txt, 1, 2, 1, 1)
 
         dlg.get_content_area().add(grid)
-        dlg.show_all()
+        dlg.show_all()  # pylint: disable-msg=E1101
 
         try:
-            response = dlg.run()
+            response = dlg.run()  # pylint: disable-msg=E1101
             if response != gtk.ResponseType.OK:
                 return
 
