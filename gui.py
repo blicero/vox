@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-11 22:13:40 krylon>
+# Time-stamp: <2023-12-11 22:54:24 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -250,10 +250,9 @@ class VoxUI:
         gtk.main_quit()
 
     def __handle_prog_view_click(self, _widget, evt: gdk.Event) -> None:
-        # self.log.debug("We got a click: %s / %s", widget, evt)
         if evt.button != 3:
-            # self.log.debug("User did not click right button, we don't care.")
             return
+
         x: float = evt.x
         y: float = evt.y
 
@@ -688,9 +687,13 @@ class VoxUI:
             uri: Final[str] = f"file://{file.path}"
             self.player.set_state(gst.State.NULL)
             self.player.set_property("uri", uri)
+            if file.position > 0:
+                glib.timeout_add(
+                    50,
+                    self.__resume_position,
+                    file)
             self.state = PlayerState.PLAYING
             self.player.set_state(gst.State.PLAYING)
-            self.log.debug("Seek to %d", file.position)
             self.format_status_line()
 
     def stop(self, *_ignore) -> None:
@@ -703,6 +706,16 @@ class VoxUI:
             self.seek.set_value(0)
             self.seek.handler_unblock(self.seek_handler_id)
             self.format_status_line("")
+
+    def __resume_position(self, f: File) -> bool:
+        """Seek to the position we last stopped playback at."""
+        with self.lock:
+            self.log.debug("Resume playback at %d", f.position)
+            self.player.seek_simple(
+                gst.Format.TIME,
+                gst.SeekFlags.FLUSH,  # | gst.SeekFlags.KEY_UNIT,
+                f.position * gst.SECOND)
+        return False
 
     # Managing our stuff
 
