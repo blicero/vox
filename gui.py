@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-10 11:01:50 krylon>
+# Time-stamp: <2023-12-11 22:13:40 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -33,10 +33,10 @@ gi.require_version("GdkPixbuf", "2.0")
 gi.require_version("Gst", "1.0")
 gi.require_version("GLib", "2.0")
 from gi.repository import Gdk as gdk  # noqa: E402
+from gi.repository import GLib as glib  # noqa: E402
 from gi.repository import Gst as gst  # noqa: E402
 from gi.repository import \
     Gtk as gtk  # noqa: E402,E501 # pylint: disable-msg=C0411,E0611
-from gi.repository import GLib as glib  # noqa: E402
 
 
 class PlayerState(Enum):
@@ -480,14 +480,20 @@ class VoxUI:
                 with self.lock:
                     if self.prog is None:
                         return
-                    if self.playidx < len(self.playlist):
+                    if self.playidx < (len(self.playlist) - 1):
+                        old = self.playlist[self.playidx]
                         self.playidx += 1
-                        self.play_file(self.playlist[self.playidx])
                         fid: Final[int] = self.playlist[self.playidx].file_id
-                        db.program_set_cur_file(self.prog,
-                                                fid)
+                        with db:
+                            db.file_set_position(old, 0)
+                            db.program_set_cur_file(self.prog,
+                                                    fid)
+                        self.play_file(self.playlist[self.playidx])
                     else:
-                        db.program_set_cur_file(self.prog, -1)
+                        f = self.playlist[self.playidx]
+                        with db:
+                            db.file_set_position(f, 0)
+                            db.program_set_cur_file(self.prog, -1)
                         self.prog = None
                         self.playlist = []
                         self.playidx = 0
@@ -516,6 +522,8 @@ class VoxUI:
                 if not success:
                     self.log.error("Cannot query playback position")
                     return True
+                self.log.debug("Position is %.3f",
+                               float(position) / gst.SECOND)
                 self.seek.handler_block(self.seek_handler_id)
                 self.seek.set_value(float(position) / gst.SECOND)
                 self.seek.handler_unblock(self.seek_handler_id)
@@ -533,6 +541,7 @@ class VoxUI:
         self.player.seek_simple(gst.Format.TIME,
                                 gst.SeekFlags.FLUSH | gst.SeekFlags.KEY_UNIT,
                                 new_pos * gst.SECOND)
+        self.handle_tick()
 
     def format_position(self, _ignore: gtk.Widget, pos: float) -> str:
         """Format the position for the seek Scale as HH:MM:ss"""
@@ -616,11 +625,18 @@ class VoxUI:
                         success = True
                         break
                 if not success:
-                    self.log.error("Did not find current track in list, starting from beginning")  # noqa: E501 pylint: disable-msg=C0301
+                    msg: Final[str] = \
+                        "Did not find current track in list, " + \
+                        "starting from beginning"
+                    self.log.error(msg)
                     prog.current_file = -1
                     self.play_program(prog)
                     return
+            pos: Final[int] = files[self.playidx].position
         self.play_file(files[self.playidx])
+        self.player.seek_simple(gst.Format.TIME,
+                                gst.SeekFlags.FLUSH | gst.SeekFlags.KEY_UNIT,
+                                pos * gst.SECOND)
         self.format_status_line()
 
     def play_previous(self, _ignore) -> None:
@@ -666,6 +682,7 @@ class VoxUI:
     def play_file(self, file: File) -> None:
         """Play a single file."""
         with self.lock:
+            # db = self.__get_db()
             self.log.debug("Play file %s",
                            file.display_title())
             uri: Final[str] = f"file://{file.path}"
@@ -673,6 +690,7 @@ class VoxUI:
             self.player.set_property("uri", uri)
             self.state = PlayerState.PLAYING
             self.player.set_state(gst.State.PLAYING)
+            self.log.debug("Seek to %d", file.position)
             self.format_status_line()
 
     def stop(self, *_ignore) -> None:
