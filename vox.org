@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2023-12-10 11:05:43 krylon>
+# Time-stamp: <2023-12-11 22:19:41 krylon>
 #
 #+TAGS: go(g) internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -12,20 +12,20 @@
   Vox is an audio book reader that saves your listening progress.
 * Clock table
   #+BEGIN: clocktable :scope file :maxlevel 202 :emphasize t
-  #+CAPTION: Clock summary at [2023-12-10 So 11:05]
-  | Headline                | Time       |           |      |
-  |-------------------------+------------+-----------+------|
-  | *Total time*            | *2d 16:34* |           |      |
-  |-------------------------+------------+-----------+------|
-  | *Components [0/0]*      | *2d 16:34* |           |      |
-  | \_  /Database [0/1]/    |            | /14:32/   |      |
-  | \_    Data types        |            |           | 2:35 |
-  | \_  /Scanner [0/0]/     |            | /1:03/    |      |
-  | \_  /Player [0/1]/      |            | /17:13/   |      |
-  | \_    Playlist [0/0]    |            |           | 9:04 |
-  | \_  /UI [0/3]/          |            | /1d 7:46/ |      |
-  | \_    Player            |            |           | 5:54 |
-  | \_    Managing Programs |            |           | 5:28 |
+  #+CAPTION: Clock summary at [2023-12-11 Mo 22:19]
+  | Headline                | Time       |            |      |
+  |-------------------------+------------+------------+------|
+  | *Total time*            | *2d 19:21* |            |      |
+  |-------------------------+------------+------------+------|
+  | *Components [0/0]*      | *2d 19:21* |            |      |
+  | \_  /Database [0/1]/    |            | /14:32/    |      |
+  | \_    Data types        |            |            | 2:35 |
+  | \_  /Scanner [0/0]/     |            | /1:03/     |      |
+  | \_  /Player [0/1]/      |            | /17:13/    |      |
+  | \_    Playlist [0/0]    |            |            | 9:04 |
+  | \_  /UI [0/3]/          |            | /1d 10:33/ |      |
+  | \_    Player            |            |            | 8:41 |
+  | \_    Managing Programs |            |            | 5:28 |
   #+END:
 * Components [0/0]
   :PROPERTIES:
@@ -115,6 +115,7 @@
     that for aesthetic reasons if nothing else.
 *** TODO Player
     :LOGBOOK:
+    CLOCK: [2023-12-11 Mo 19:32]--[2023-12-11 Mo 22:19] =>  2:47
     CLOCK: [2023-12-09 Sa 17:45]--[2023-12-09 Sa 19:01] =>  1:16
     CLOCK: [2023-12-08 Fr 18:21]--[2023-12-08 Fr 19:42] =>  1:21
     CLOCK: [2023-12-07 Do 17:52]--[2023-12-07 Do 21:09] =>  3:17
