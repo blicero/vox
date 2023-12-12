@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-11 22:54:24 krylon>
+# Time-stamp: <2023-12-12 18:33:03 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -86,6 +86,8 @@ class VoxUI:
         self.cb_stop = gtk.Button.new_from_stock(gtk.STOCK_MEDIA_STOP)
         self.cb_next = gtk.Button.new_from_stock(gtk.STOCK_MEDIA_NEXT)
         self.cb_prev = gtk.Button.new_from_stock(gtk.STOCK_MEDIA_PREVIOUS)
+        self.cb_vol = gtk.SpinButton.new_with_range(0, 100, 1)
+        self.cb_vol.set_value(50)
 
         self.control_box = gtk.Box(orientation=gtk.Orientation.HORIZONTAL)
         self.seek = gtk.Scale.new_with_range(gtk.Orientation.HORIZONTAL,
@@ -188,6 +190,7 @@ class VoxUI:
         self.cbox.add(self.cb_play)
         self.cbox.add(self.cb_stop)
         self.cbox.add(self.cb_next)
+        self.cbox.add(self.cb_vol)
 
         self.control_box.pack_start(self.cbox, False, False, 0)
         self.control_box.pack_start(self.seek, True, True, 0)
@@ -212,6 +215,7 @@ class VoxUI:
         self.cb_stop.connect("clicked", self.stop)
         self.cb_prev.connect("clicked", self.play_previous)
         self.cb_next.connect("clicked", self.play_next)
+        self.cb_vol.connect("value-changed", self.__adjust_volume)
         self.seek.connect("format-value", self.format_position)
         self.seek_handler_id = self.seek.connect("value-changed",
                                                  self.handle_seek)
@@ -468,6 +472,14 @@ class VoxUI:
             dlg.run()  # pylint: disable-msg=E1101
         finally:
             dlg.destroy()
+
+    def __adjust_volume(self, spin: gtk.SpinButton) -> None:
+        val: int = spin.get_value_as_int()
+        self.log.debug("Adjust volume: %d%%", val)
+        new_vol: float = val / 100.0
+        assert 0.0 <= new_vol <= 1.0
+        with self.lock:
+            self.player.set_property("volume", new_vol)
 
     def handle_player_msg(self, _bus, msg) -> None:
         """React to messages sent by the Player"""
