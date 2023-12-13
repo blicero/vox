@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-12 18:33:03 krylon>
+# Time-stamp: <2023-12-13 19:13:18 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -326,7 +326,7 @@ class VoxUI:
 
         return menu
 
-    def __mk_context_menu_program(self, _piter: gtk.TreeIter, prog_id: int) -> Optional[gtk.Menu]:  # noqa: E501 # pylint: disable-msg=C0301,R1711
+    def __mk_context_menu_program(self, piter: gtk.TreeIter, prog_id: int) -> Optional[gtk.Menu]:  # noqa: E501 # pylint: disable-msg=C0301,R1711
         db = self.__get_db()
         prog: Optional[Program] = db.program_get_by_id(prog_id)
         if prog is None:
@@ -336,7 +336,7 @@ class VoxUI:
         edit_item = gtk.MenuItem.new_with_mnemonic("_Edit")
         play_item = gtk.MenuItem.new_with_mnemonic("_Play")
 
-        edit_item.connect("activate", self.__mk_prog_edit_handler(prog))
+        edit_item.connect("activate", self.prog_edit_handler, prog, piter)
         play_item.connect("activate", self.__mk_prog_play_handler(prog))
 
         menu: gtk.Menu = gtk.Menu()
@@ -366,11 +366,90 @@ class VoxUI:
 
         return handler
 
-    def __mk_prog_edit_handler(self, prog: Program) -> Callable:
-        def handler(*_ignore: Any) -> None:
-            self.log.debug("Edit Program %s: IMPLEMENTME",
-                           prog.title)
-        return handler
+    # pylint: disable-msg=R0914
+    def prog_edit_handler(self, _ignore: Any, prog: Program, piter: gtk.TreeIter) -> None:  # noqa: E501 pylint: disable-msg=C0301
+        """Present a Dialog to edit the Program."""
+        self.log.debug("Edit Program %s: IMPLEMENTME",
+                       prog.title)
+        dlg: gtk.Dialog = gtk.Dialog(
+            parent=self.win,
+            title=f"Edit Program #{prog.title}",
+            modal=True,
+        )
+        dlg.add_buttons(
+            gtk.STOCK_CANCEL,
+            gtk.ResponseType.CANCEL,
+            gtk.STOCK_OK,
+            gtk.ResponseType.OK,
+        )
+
+        area = dlg.get_content_area()
+        grid = gtk.Grid.new()
+        title_lbl = gtk.Label.new("Title")
+        title_entry = gtk.Entry.new()
+        author_lbl = gtk.Label.new("Author")
+        author_entry = gtk.Entry.new()
+        url_lbl = gtk.Label.new("URL")
+        url_entry = gtk.Entry.new()
+
+        title_entry.set_text(prog.title)
+        author_entry.set_text(prog.creator)
+        url_entry.set_text(prog.url)
+
+        grid.attach(title_lbl, 0, 0, 1, 1)
+        grid.attach(title_entry, 1, 0, 1, 1)
+        grid.attach(author_lbl, 1, 0, 1, 1)
+        grid.attach(author_entry, 1, 1, 1, 1)
+        grid.attach(url_lbl, 0, 2, 1, 1)
+        grid.attach(url_entry, 1, 2, 1, 1)
+
+        area.add(grid)
+        dlg.show_all()
+
+        try:
+            if dlg.run() != gtk.ResponseType.OK:
+                return
+            title: Final[str] = title_entry.get_text()
+            author: Final[str] = author_entry.get_text()
+            url: Final[str] = url_entry.get_text()
+        finally:
+            dlg.destroy()
+
+        self.log.debug("Title: '%s', Author: '%s', URL: '%s'",
+                       title,
+                       author,
+                       url)
+
+        if title == prog.title and author == prog.creator and url == prog.url:
+            return
+
+        db = self.__get_db()
+
+        with db:
+            cols: list[int] = []
+            vals: list[str] = []
+            if title != prog.title:
+                self.log.debug("Update title '%s' -> '%s'",
+                               prog.title,
+                               title)
+                db.program_set_title(prog, title)
+                cols.append(1)
+                vals.append(title)
+            if author != prog.creator:
+                self.log.debug("Update author: '%s' -> '%s'",
+                               prog.creator,
+                               author)
+                db.program_set_creator(prog, author)
+            if url != prog.url:
+                self.log.debug("Update URL: '%s' -> '%s'",
+                               prog.url,
+                               url)
+                db.program_set_url(prog, url)
+
+            if len(cols) > 0:
+                self.log.debug("Update columns: %r", cols)
+                assert len(cols) == len(vals)
+                self.prog_store.set(piter, cols, vals)
 
     def __refresh(self, *_ignore: Any) -> None:
         """Wipe and recreate the data model"""
