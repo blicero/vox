@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2023-12-12 18:34:42 krylon>
+# Time-stamp: <2023-12-13 19:16:30 krylon>
 #
 #+TAGS: go(g) internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -12,21 +12,21 @@
   Vox is an audio book reader that saves your listening progress.
 * Clock table
   #+BEGIN: clocktable :scope file :maxlevel 202 :emphasize t
-  #+CAPTION: Clock summary at [2023-12-12 Di 18:33]
-  | Headline                   | Time       |            |      |      |
-  |----------------------------+------------+------------+------+------|
-  | *Total time*               | *2d 20:39* |            |      |      |
-  |----------------------------+------------+------------+------+------|
-  | *Components [0/0]*         | *2d 20:39* |            |      |      |
-  | \_  /Database [0/1]/       |            | /14:32/    |      |      |
-  | \_    Data types           |            |            | 2:35 |      |
-  | \_  /Scanner [0/0]/        |            | /1:03/     |      |      |
-  | \_  /Player [0/1]/         |            | /17:13/    |      |      |
-  | \_    Playlist [0/0]       |            |            | 9:04 |      |
-  | \_  /UI [1/4]/             |            | /1d 11:51/ |      |      |
-  | \_    Player               |            |            | 9:59 |      |
-  | \_      Pump up the volume |            |            |      | 1:18 |
-  | \_    Managing Programs    |            |            | 5:28 |      |
+  #+CAPTION: Clock summary at [2023-12-13 Mi 19:16]
+  | Headline                   | Time      |            |       |      |
+  |----------------------------+-----------+------------+-------+------|
+  | *Total time*               | *3d 1:48* |            |       |      |
+  |----------------------------+-----------+------------+-------+------|
+  | *Components [0/0]*         | *3d 1:48* |            |       |      |
+  | \_  /Database [0/1]/       |           | /14:32/    |       |      |
+  | \_    Data types           |           |            |  2:35 |      |
+  | \_  /Scanner [0/0]/        |           | /1:03/     |       |      |
+  | \_  /Player [0/1]/         |           | /17:13/    |       |      |
+  | \_    Playlist [0/0]       |           |            |  9:04 |      |
+  | \_  /UI [1/4]/             |           | /1d 17:00/ |       |      |
+  | \_    Player               |           |            |  9:59 |      |
+  | \_      Pump up the volume |           |            |       | 1:18 |
+  | \_    Managing Programs    |           |            | 10:37 |      |
   #+END:
 * Components [0/0]
   :PROPERTIES:
@@ -132,6 +132,8 @@
      does what it's supposed to.
 *** TODO Managing Programs
     :LOGBOOK:
+    CLOCK: [2023-12-13 Mi 17:52]--[2023-12-13 Mi 19:15] =>  1:23
+    CLOCK: [2023-12-12 Di 19:04]--[2023-12-12 Di 22:50] =>  3:46
     CLOCK: [2023-12-05 Di 16:00]--[2023-12-05 Di 17:55] =>  1:55
     CLOCK: [2023-12-05 Di 15:37]--[2023-12-05 Di 15:47] =>  0:10
     CLOCK: [2023-12-04 Mo 20:54]--[2023-12-04 Mo 21:50] =>  0:56
