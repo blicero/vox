@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-13 19:13:18 krylon>
+# Time-stamp: <2023-12-14 18:08:07 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -603,17 +603,23 @@ class VoxUI:
             with self.lock:
                 if self.state != PlayerState.PLAYING:
                     return True
+
                 success, duration = self.player.query_duration(gst.Format.TIME)
+
                 if not success:
                     self.log.error("Cannot query track duration")
                     return True
+
                 self.seek.set_range(0, duration / gst.SECOND)
                 success, position = self.player.query_position(gst.Format.TIME)
+
                 if not success:
                     self.log.error("Cannot query playback position")
                     return True
-                self.log.debug("Position is %.3f",
-                               float(position) / gst.SECOND)
+
+                # self.log.debug("Position is %.3f",
+                #                float(position) / gst.SECOND)
+
                 self.seek.handler_block(self.seek_handler_id)
                 self.seek.set_value(float(position) / gst.SECOND)
                 self.seek.handler_unblock(self.seek_handler_id)
@@ -780,7 +786,7 @@ class VoxUI:
             self.player.set_property("uri", uri)
             if file.position > 0:
                 glib.timeout_add(
-                    50,
+                    250,
                     self.__resume_position,
                     file)
             self.state = PlayerState.PLAYING
@@ -800,12 +806,9 @@ class VoxUI:
 
     def __resume_position(self, f: File) -> bool:
         """Seek to the position we last stopped playback at."""
+        self.log.debug("Resume playback at %d", f.position)
         with self.lock:
-            self.log.debug("Resume playback at %d", f.position)
-            self.player.seek_simple(
-                gst.Format.TIME,
-                gst.SeekFlags.FLUSH,  # | gst.SeekFlags.KEY_UNIT,
-                f.position * gst.SECOND)
+            self.seek.set_value(f.position)
         return False
 
     # Managing our stuff
