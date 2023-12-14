@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2023-12-13 19:16:30 krylon>
+# Time-stamp: <2023-12-14 18:09:47 krylon>
 #
 #+TAGS: go(g) internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -12,19 +12,19 @@
   Vox is an audio book reader that saves your listening progress.
 * Clock table
   #+BEGIN: clocktable :scope file :maxlevel 202 :emphasize t
-  #+CAPTION: Clock summary at [2023-12-13 Mi 19:16]
+  #+CAPTION: Clock summary at [2023-12-14 Do 18:09]
   | Headline                   | Time      |            |       |      |
   |----------------------------+-----------+------------+-------+------|
   | *Total time*               | *3d 1:48* |            |       |      |
   |----------------------------+-----------+------------+-------+------|
   | *Components [0/0]*         | *3d 1:48* |            |       |      |
-  | \_  /Database [0/1]/       |           | /14:32/    |       |      |
+  | \_  /Database [1/1]/       |           | /14:32/    |       |      |
   | \_    Data types           |           |            |  2:35 |      |
   | \_  /Scanner [0/0]/        |           | /1:03/     |       |      |
-  | \_  /Player [0/1]/         |           | /17:13/    |       |      |
+  | \_  /Player [1/1]/         |           | /17:13/    |       |      |
   | \_    Playlist [0/0]       |           |            |  9:04 |      |
-  | \_  /UI [1/4]/             |           | /1d 17:00/ |       |      |
-  | \_    Player               |           |            |  9:59 |      |
+  | \_  /UI [3/5]/             |           | /1d 17:00/ |       |      |
+  | \_    Player [2/2]         |           |            |  9:59 |      |
   | \_      Pump up the volume |           |            |       | 1:18 |
   | \_    Managing Programs    |           |            | 10:37 |      |
   #+END:
@@ -33,7 +33,7 @@
   :COOKIE_DATA: todo recursive
   :VISIBILITY: children
   :END:
-** Database [0/1]
+** Database [1/1]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
@@ -46,7 +46,8 @@
    CLOCK: [2023-10-28 Sa 21:15]--[2023-10-28 Sa 23:44] =>  2:29
    CLOCK: [2023-10-28 Sa 15:47]--[2023-10-28 Sa 16:05] =>  0:18
    :END:
-*** TODO Data types
+*** DONE Data types
+    CLOSED: [2023-12-13 Mi 19:31]
     :LOGBOOK:
     CLOCK: [2023-10-31 Di 19:24]--[2023-10-31 Di 20:31] =>  1:07
     CLOCK: [2023-10-26 Do 22:45]--[2023-10-27 Fr 00:01] =>  1:16
@@ -63,7 +64,7 @@
    CLOCK: [2023-11-06 Mo 18:51]--[2023-11-06 Mo 19:33] =>  0:42
    CLOCK: [2023-11-06 Mo 13:14]--[2023-11-06 Mo 13:35] =>  0:21
    :END:
-** Player [0/1]
+** Player [1/1]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
@@ -76,7 +77,15 @@
    CLOCK: [2023-11-18 Sa 16:41]--[2023-11-18 Sa 17:55] =>  1:14
    CLOCK: [2023-11-16 Do 20:30]--[2023-11-16 Do 22:31] =>  2:01
    :END:
-*** TODO Playlist [0/0]
+   I have settled on using GStreamer. The documentation I was able to find is
+   *very* Spartan, but I found a few examples that helped me figure out
+   something that works. I mean, my needs are simple enough, fortunately.
+   In the long run I might look at Pipewire, but for now we're good. Most
+   importantly, GStreamer handles all the decoding, so I can just tell it to
+   "play this file" and don't need to worry about the specific file format
+   and/or audio codec.
+*** DONE Playlist [0/0]
+    CLOSED: [2023-12-13 Mi 19:29]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
@@ -89,7 +98,7 @@
     CLOCK: [2023-11-28 Di 15:48]--[2023-11-28 Di 20:33] =>  4:45
     CLOCK: [2023-11-27 Mo 22:51]--[2023-11-27 Mo 23:21] =>  0:30
     :END:
-** UI [1/4]
+** UI [3/5]                                                              :ui:
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
@@ -114,13 +123,26 @@
     since that is almost certainly more efficient, I should rewrite my code to
     do that eventually. For now, it's not big problem. But I would like to do
     that for aesthetic reasons if nothing else.
-*** TODO Player
+*** DONE Player [2/2]
+CLOSED: [2023-12-14 Do 18:09]
     :LOGBOOK:
     CLOCK: [2023-12-11 Mo 19:32]--[2023-12-11 Mo 22:19] =>  2:47
     CLOCK: [2023-12-09 Sa 17:45]--[2023-12-09 Sa 19:01] =>  1:16
     CLOCK: [2023-12-08 Fr 18:21]--[2023-12-08 Fr 19:42] =>  1:21
     CLOCK: [2023-12-07 Do 17:52]--[2023-12-07 Do 21:09] =>  3:17
     :END:
+**** DONE Resume playback from last known position
+     CLOSED: [2023-12-14 Do 18:09]
+     [2023-12-13 Mi 19:28]
+     Resuming playback of a Program at the most recently played file already
+     works. But I also want to jump to the most recently played position
+     within that file. Some audiobooks consist of a small number of long
+     files, some even just a single file, so just resuming playback at the
+     last played file is not enough. I have done some work towards this end
+     already. The playback position is regularly queried and saved to the
+     database, but telling the player to seek to that position does not work,
+     yet, and I don't understand where the problem is. Manually seeking works
+     fine, so I suspect it's a timing problem.
 **** DONE Pump up the volume                                        :feature:
      CLOSED: [2023-12-12 Di 18:33]
      :LOGBOOK:
