@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-07 20:37:00 krylon>
+# Time-stamp: <2023-12-14 17:53:03 krylon>
 #
 # /data/code/python/vox/database.py
 # created on 28. 10. 2023
@@ -45,6 +45,7 @@ CREATE TABLE program (
     title                TEXT UNIQUE NOT NULL,
     creator              TEXT NOT NULL DEFAULT '',
     url                  TEXT NOT NULL DEFAULT '',
+    cover                TEXT NOT NULL DEFAULT '',
     cur_file             INTEGER NOT NULL DEFAULT -1
 ) STRICT
     """,
@@ -112,6 +113,7 @@ class QueryID(Enum):
     ProgramSetURL = auto()
     ProgramSetCreator = auto()
     ProgramSetCurFile = auto()
+    ProgramSetCover = auto()
     FileAdd = auto()
     FileDel = auto()
     FileGetByID = auto()
@@ -143,6 +145,7 @@ db_queries: Final[dict[QueryID, str]] = {
         title,
         creator,
         url,
+        cover,
         cur_file
     FROM program""",
     QueryID.ProgramGetByID:    """
@@ -150,6 +153,7 @@ db_queries: Final[dict[QueryID, str]] = {
         title,
         creator,
         url,
+        cover,
         cur_file
     FROM program
     WHERE id = ?""",
@@ -158,6 +162,7 @@ db_queries: Final[dict[QueryID, str]] = {
         id,
         creator,
         url,
+        cover,
         cur_file
     FROM program
     WHERE title = ?""",
@@ -165,6 +170,7 @@ db_queries: Final[dict[QueryID, str]] = {
     QueryID.ProgramSetCreator: "UPDATE program SET creator = ? WHERE id = ?",
     QueryID.ProgramSetURL:     "UPDATE program SET url = ? WHERE id = ?",
     QueryID.ProgramSetCurFile: "UPDATE program SET cur_file = ? WHERE id = ?",
+    QueryID.ProgramSetCover:   "UPDATE program SET cover = ? WHERE id = ?",
     QueryID.FileAdd:           """
     INSERT INTO file (path, folder_id, program_id, ord1, ord2)
               VALUES (?,    ?,         ?,          ?,    ?   )
@@ -334,7 +340,8 @@ class Database:
                 title=row[1],
                 creator=row[2],
                 url=row[3],
-                current_file=row[4])
+                cover=row[4],
+                current_file=row[5])
             progs.append(p)
         return progs
 
@@ -349,7 +356,8 @@ class Database:
                 title=row[0],
                 creator=row[1],
                 url=row[2],
-                current_file=row[3],
+                cover=row[3],
+                current_file=row[4],
             )
             return prog
         return None
@@ -365,7 +373,8 @@ class Database:
                 title=title,
                 creator=row[1],
                 url=row[2],
-                cur_file=row[3],
+                cover=row[3],
+                cur_file=row[4],
             )
             return prog
         return None
@@ -385,14 +394,33 @@ class Database:
     def program_set_url(self, prog: Program, url: str) -> None:
         """Update the program's URL."""
         cur: sqlite3.Cursor = self.db.cursor()
-        cur.execute(db_queries[QueryID.ProgramSetURL], (url, prog.program_id))  # noqa: E501
+        cur.execute(db_queries[QueryID.ProgramSetURL],
+                    (url, prog.program_id))
         prog.url = url
 
     def program_set_cur_file(self, prog: Program, file_id: int) -> None:
         """Update the current file of a Program"""
         cur: sqlite3.Cursor = self.db.cursor()
-        cur.execute(db_queries[QueryID.ProgramSetCurFile], (file_id, prog.program_id))  # noqa: E501
+        cur.execute(db_queries[QueryID.ProgramSetCurFile],
+                    (file_id, prog.program_id))
         prog.current_file = file_id
+
+    def program_set_cover(self, prog: Program, cover: Final[str]) -> None:
+        """Update a Program's cover"""
+        if cover != "":
+            # If the cover does not exist, we emit a warning, but proceed
+            # anyway. The file will probably be selected from a
+            # FileChooserDialog anyway, so this is not the place to block.
+            if not krylib.fexist(cover):
+                self.log.warn(
+                    "Cover file named for Program %d (%s) does not exist: %s",
+                    prog.program_id,
+                    prog.title,
+                    cover)
+            cur: sqlite3.Cursor = self.db.cursor()
+            cur.execute(db_queries[QueryID.ProgramSetCover],
+                        (cover, prog.program_id))
+            prog.cover = cover
 
     def file_add(self, f: File) -> None:
         """Add a File to the database."""
