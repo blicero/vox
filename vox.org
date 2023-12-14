@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2023-12-14 18:09:47 krylon>
+# Time-stamp: <2023-12-14 18:13:29 krylon>
 #
 #+TAGS: go(g) internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -12,21 +12,22 @@
   Vox is an audio book reader that saves your listening progress.
 * Clock table
   #+BEGIN: clocktable :scope file :maxlevel 202 :emphasize t
-  #+CAPTION: Clock summary at [2023-12-14 Do 18:09]
-  | Headline                   | Time      |            |       |      |
-  |----------------------------+-----------+------------+-------+------|
-  | *Total time*               | *3d 1:48* |            |       |      |
-  |----------------------------+-----------+------------+-------+------|
-  | *Components [0/0]*         | *3d 1:48* |            |       |      |
-  | \_  /Database [1/1]/       |           | /14:32/    |       |      |
-  | \_    Data types           |           |            |  2:35 |      |
-  | \_  /Scanner [0/0]/        |           | /1:03/     |       |      |
-  | \_  /Player [1/1]/         |           | /17:13/    |       |      |
-  | \_    Playlist [0/0]       |           |            |  9:04 |      |
-  | \_  /UI [3/5]/             |           | /1d 17:00/ |       |      |
-  | \_    Player [2/2]         |           |            |  9:59 |      |
-  | \_      Pump up the volume |           |            |       | 1:18 |
-  | \_    Managing Programs    |           |            | 10:37 |      |
+  #+CAPTION: Clock summary at [2023-12-14 Do 18:13]
+  | Headline                                         | Time      |            |       |      |
+  |--------------------------------------------------+-----------+------------+-------+------|
+  | *Total time*                                     | *3d 2:37* |            |       |      |
+  |--------------------------------------------------+-----------+------------+-------+------|
+  | *Components [0/0]*                               | *3d 2:37* |            |       |      |
+  | \_  /Database [1/1]/                             |           | /15:17/    |       |      |
+  | \_    Data types                                 |           |            |  2:35 |      |
+  | \_  /Scanner [0/0]/                              |           | /1:03/     |       |      |
+  | \_  /Player [1/1]/                               |           | /17:13/    |       |      |
+  | \_    Playlist [0/0]                             |           |            |  9:04 |      |
+  | \_  /UI [3/5]/                                   |           | /1d 17:04/ |       |      |
+  | \_    Player [2/2]                               |           |            | 10:03 |      |
+  | \_      Resume playback from last known position |           |            |       | 0:04 |
+  | \_      Pump up the volume                       |           |            |       | 1:18 |
+  | \_    Managing Programs                          |           |            | 10:37 |      |
   #+END:
 * Components [0/0]
   :PROPERTIES:
@@ -39,6 +40,7 @@
    :VISIBILITY: children
    :END:
    :LOGBOOK:
+   CLOCK: [2023-12-14 Do 17:20]--[2023-12-14 Do 18:05] =>  0:45
    CLOCK: [2023-11-04 Sa 18:05]--[2023-11-04 Sa 20:50] =>  2:45
    CLOCK: [2023-11-03 Fr 17:46]--[2023-11-03 Fr 20:31] =>  2:45
    CLOCK: [2023-11-02 Do 20:17]--[2023-11-02 Do 21:37] =>  1:20
@@ -124,7 +126,7 @@
     do that eventually. For now, it's not big problem. But I would like to do
     that for aesthetic reasons if nothing else.
 *** DONE Player [2/2]
-CLOSED: [2023-12-14 Do 18:09]
+    CLOSED: [2023-12-14 Do 18:09]
     :LOGBOOK:
     CLOCK: [2023-12-11 Mo 19:32]--[2023-12-11 Mo 22:19] =>  2:47
     CLOCK: [2023-12-09 Sa 17:45]--[2023-12-09 Sa 19:01] =>  1:16
@@ -133,6 +135,9 @@ CLOSED: [2023-12-14 Do 18:09]
     :END:
 **** DONE Resume playback from last known position
      CLOSED: [2023-12-14 Do 18:09]
+     :LOGBOOK:
+     CLOCK: [2023-12-14 Do 18:05]--[2023-12-14 Do 18:09] =>  0:04
+     :END:
      [2023-12-13 Mi 19:28]
      Resuming playback of a Program at the most recently played file already
      works. But I also want to jump to the most recently played position
