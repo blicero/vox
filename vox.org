@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2023-12-14 18:13:29 krylon>
+# Time-stamp: <2023-12-14 21:43:09 krylon>
 #
 #+TAGS: go(g) internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -12,22 +12,22 @@
   Vox is an audio book reader that saves your listening progress.
 * Clock table
   #+BEGIN: clocktable :scope file :maxlevel 202 :emphasize t
-  #+CAPTION: Clock summary at [2023-12-14 Do 18:13]
+  #+CAPTION: Clock summary at [2023-12-14 Do 21:43]
   | Headline                                         | Time      |            |       |      |
   |--------------------------------------------------+-----------+------------+-------+------|
-  | *Total time*                                     | *3d 2:37* |            |       |      |
+  | *Total time*                                     | *3d 6:10* |            |       |      |
   |--------------------------------------------------+-----------+------------+-------+------|
-  | *Components [0/0]*                               | *3d 2:37* |            |       |      |
+  | *Components [0/0]*                               | *3d 6:10* |            |       |      |
   | \_  /Database [1/1]/                             |           | /15:17/    |       |      |
   | \_    Data types                                 |           |            |  2:35 |      |
   | \_  /Scanner [0/0]/                              |           | /1:03/     |       |      |
   | \_  /Player [1/1]/                               |           | /17:13/    |       |      |
   | \_    Playlist [0/0]                             |           |            |  9:04 |      |
-  | \_  /UI [3/5]/                                   |           | /1d 17:04/ |       |      |
-  | \_    Player [2/2]                               |           |            | 10:03 |      |
-  | \_      Resume playback from last known position |           |            |       | 0:04 |
+  | \_  /UI [3/5]/                                   |           | /1d 20:37/ |       |      |
+  | \_    Player [2/2]                               |           |            | 10:31 |      |
+  | \_      Resume playback from last known position |           |            |       | 0:32 |
   | \_      Pump up the volume                       |           |            |       | 1:18 |
-  | \_    Managing Programs                          |           |            | 10:37 |      |
+  | \_    Managing Programs                          |           |            | 13:42 |      |
   #+END:
 * Components [0/0]
   :PROPERTIES:
@@ -136,7 +136,7 @@
 **** DONE Resume playback from last known position
      CLOSED: [2023-12-14 Do 18:09]
      :LOGBOOK:
-     CLOCK: [2023-12-14 Do 18:05]--[2023-12-14 Do 18:09] =>  0:04
+     CLOCK: [2023-12-14 Do 18:05]--[2023-12-14 Do 18:37] =>  0:32
      :END:
      [2023-12-13 Mi 19:28]
      Resuming playback of a Program at the most recently played file already
@@ -159,6 +159,7 @@
      does what it's supposed to.
 *** TODO Managing Programs
     :LOGBOOK:
+    CLOCK: [2023-12-14 Do 18:37]--[2023-12-14 Do 21:42] =>  3:05
     CLOCK: [2023-12-13 Mi 17:52]--[2023-12-13 Mi 19:15] =>  1:23
     CLOCK: [2023-12-12 Di 19:04]--[2023-12-12 Di 22:50] =>  3:46
     CLOCK: [2023-12-05 Di 16:00]--[2023-12-05 Di 17:55] =>  1:55
