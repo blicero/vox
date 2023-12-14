@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-14 18:08:07 krylon>
+# Time-stamp: <2023-12-14 19:33:16 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -37,6 +37,7 @@ from gi.repository import GLib as glib  # noqa: E402
 from gi.repository import Gst as gst  # noqa: E402
 from gi.repository import \
     Gtk as gtk  # noqa: E402,E501 # pylint: disable-msg=C0411,E0611
+from gi.repository import GdkPixbuf as gdk_pixbuf  # noqa: E402
 
 
 class PlayerState(Enum):
@@ -145,6 +146,7 @@ class VoxUI:
             int,  # Ord1
             int,  # Ord2
             str,  # Duration
+            str,  # Cover
         )
         self.sort_store = gtk.TreeModelSort(model=self.prog_store)
         self.sort_store.set_default_sort_func(cmp_iter)
@@ -160,15 +162,22 @@ class VoxUI:
             (4, "Disc #"),
             (5, "Track #"),
             (6, "Dur"),
+            (7, "Cover"),
         ]
 
         for c in columns:
-            col = gtk.TreeViewColumn(
-                c[1],
-                gtk.CellRendererText(),
-                text=c[0],
-                weight=1,
-            )
+            if c[1] != "Cover":
+                col = gtk.TreeViewColumn(
+                    c[1],
+                    gtk.CellRendererText(),
+                    text=c[0],
+                    weight=1,
+                )
+            else:
+                col = gtk.TreeViewColumn(
+                    c[1],
+                    gtk.CellRendererPixbuf,
+                )
             self.prog_view.append_column(col)
 
         self.__load_data()
@@ -335,6 +344,7 @@ class VoxUI:
 
         edit_item = gtk.MenuItem.new_with_mnemonic("_Edit")
         play_item = gtk.MenuItem.new_with_mnemonic("_Play")
+        cover_item = gtk.MenuItem.new_with_mnemonic("_Cover")
 
         edit_item.connect("activate", self.prog_edit_handler, prog, piter)
         play_item.connect("activate", self.__mk_prog_play_handler(prog))
@@ -342,6 +352,7 @@ class VoxUI:
         menu: gtk.Menu = gtk.Menu()
         menu.append(edit_item)
         menu.append(play_item)
+        menu.append(cover_item)
 
         return menu
 
