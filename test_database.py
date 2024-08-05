@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-11-06 20:49:37 krylon>
+# Time-stamp: <2024-08-05 20:58:16 krylon>
 #
 # /data/code/python/vox/test_database.py
 # created on 03. 11. 2023
@@ -42,6 +42,7 @@ class DatabaseTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Prepare the test environment."""
         stamp = datetime.now()
         folder_name = stamp.strftime("vox_test_database_%Y%m%d_%H%M%S")
         cls.folder = os.path.join(TEST_ROOT,
@@ -50,6 +51,7 @@ class DatabaseTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls) -> None:
+        """Clean up after testing."""
         os.system(f"/bin/rm -rf {cls.folder}")
 
     def test_01_db_open(self) -> None:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-14 17:41:02 krylon>
+# Time-stamp: <2024-08-05 21:06:44 krylon>
 #
 # /data/code/python/vox/data.py
 # created on 25. 10. 2023
@@ -130,7 +130,9 @@ class File:  # pylint: disable-msg=R0902,R0903
 
 class Program:  # pylint: disable-msg=R0903
     """Program is an audiobook, a podcast, or another sequence of audio
-    files"""
+
+    files
+    """
 
     __slots__ = [
         "program_id",
@@ -148,7 +150,7 @@ class Program:  # pylint: disable-msg=R0903
     cover: str
     url: str
 
-    def __init__(self, **fields):
+    def __init__(self, **fields):  # pylint: disable-msg=R0912
         if "program_id" in fields:
             assert isinstance(fields["program_id"], int)
             self.program_id = fields["program_id"]

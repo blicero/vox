@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-14 17:53:03 krylon>
+# Time-stamp: <2024-08-05 21:09:52 krylon>
 #
 # /data/code/python/vox/database.py
 # created on 28. 10. 2023
@@ -104,6 +104,7 @@ OPEN_LOCK: Final[threading.Lock] = threading.Lock()
 # pylint: disable-msg=C0103,R0904
 class QueryID(Enum):
     """Provides symbolic constants for database queries"""
+
     ProgramAdd = auto()
     ProgramDel = auto()
     ProgramGetAll = auto()
@@ -405,14 +406,14 @@ class Database:
                     (file_id, prog.program_id))
         prog.current_file = file_id
 
-    def program_set_cover(self, prog: Program, cover: Final[str]) -> None:
+    def program_set_cover(self, prog: Program, cover: str) -> None:
         """Update a Program's cover"""
         if cover != "":
             # If the cover does not exist, we emit a warning, but proceed
             # anyway. The file will probably be selected from a
             # FileChooserDialog anyway, so this is not the place to block.
             if not krylib.fexist(cover):
-                self.log.warn(
+                self.log.warning(
                     "Cover file named for Program %d (%s) does not exist: %s",
                     prog.program_id,
                     prog.title,

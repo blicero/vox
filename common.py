@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-10-26 18:04:06 krylon>
+# Time-stamp: <2024-08-05 21:12:23 krylon>
 #
 # /data/code/python/vox/common.py
 # created on 24. 10. 2023
@@ -23,7 +23,7 @@ from typing import Final
 from threading import Lock
 
 APP_NAME: Final[str] = "Vox"
-APP_VERSION: Final[str] = "0.0.1"
+APP_VERSION: Final[str] = "0.2.0"
 DEBUG: Final[bool] = True
 
 
@@ -37,7 +37,9 @@ class Path:
 
     def base(self, folder: str = "") -> str:
         """Return the base directory for application specific files.
-        If path is a non-empty string, set the base directory to its value."""
+
+        If path is a non-empty string, set the base directory to its value.
+        """
         if folder != "":
             self.__base = folder
         return self.__base

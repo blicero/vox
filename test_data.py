@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-10-31 19:47:52 krylon>
+# Time-stamp: <2024-08-05 20:57:45 krylon>
 #
 # /data/code/python/vox/test_data.py
 # created on 26. 10. 2023
@@ -25,6 +25,7 @@ from vox.data import File
 
 class FileCreateTestData(NamedTuple):
     """Data for a single test of File creation"""
+
     args: dict[str, Any]
     expect_error: bool
 

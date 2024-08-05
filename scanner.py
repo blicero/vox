@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-06 19:26:14 krylon>
+# Time-stamp: <2024-08-05 20:57:37 krylon>
 #
 # /data/code/python/vox/scanner.py
 # created on 04. 11. 2023
@@ -36,8 +36,7 @@ DISC_NO_PAT: Final[re.Pattern] = re.compile("(\\d+)\\s*/\\s*(\\d+)")
 
 
 class Scanner:
-    """The Scanner traverses directory trees and attempts to
-    spot audio files."""
+    """The Scanner traverses directory trees and attempts to spot audio files."""
 
     __slots__ = [
         "db",
@@ -176,7 +175,8 @@ def read_tags(path: str) -> dict[str, str]:
 def scan(folder: str) -> None:
     """Instantiate a Scanner to scan a single directory tree.
 
-    I'll use this for testing and debugging mainly."""
+    I'll use this for testing and debugging mainly.
+    """
     s: Scanner = Scanner()
     s.scan(folder)
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2023-12-14 19:33:16 krylon>
+# Time-stamp: <2024-08-05 21:11:12 krylon>
 #
 # /data/code/python/vox/ui.py
 # created on 04. 11. 2023
@@ -37,11 +37,13 @@ from gi.repository import GLib as glib  # noqa: E402
 from gi.repository import Gst as gst  # noqa: E402
 from gi.repository import \
     Gtk as gtk  # noqa: E402,E501 # pylint: disable-msg=C0411,E0611
-from gi.repository import GdkPixbuf as gdk_pixbuf  # noqa: E402
+
+# from gi.repository import GdkPixbuf as gdk_pixbuf  # noqa: E402,F401
 
 
 class PlayerState(Enum):
     """Symbolic constants for the player's state."""
+
     STOPPED = auto()
     PLAYING = auto()
     PAUSED = auto()
@@ -176,7 +178,7 @@ class VoxUI:
             else:
                 col = gtk.TreeViewColumn(
                     c[1],
-                    gtk.CellRendererPixbuf,
+                    gtk.CellRendererPixbuf(),
                 )
             self.prog_view.append_column(col)
 
@@ -527,8 +529,9 @@ class VoxUI:
 
     def __scan_worker(self, path: str) -> None:
         """Scan a single directory tree.
-        This method is meant to be called in a background thread."""
 
+        This method is meant to be called in a background thread.
+        """
         sc = scanner.Scanner()
 
         try:
@@ -664,8 +667,10 @@ class VoxUI:
 
     def format_status_line(self, txt: Optional[str] = None) -> None:
         """Update the status line.
+
         If playing or paused, display the program title, the track number
-        and the title of the current track."""
+        and the title of the current track.
+        """
         with self.lock:
             if txt is None:
                 match self.state:
