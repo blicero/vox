@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2023-12-14 21:43:09 krylon>
+# Time-stamp: <2024-08-05 21:49:17 krylon>
 #
 #+TAGS: go(g) internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -29,6 +29,14 @@
   | \_      Pump up the volume                       |           |            |       | 1:18 |
   | \_    Managing Programs                          |           |            | 13:42 |      |
   #+END:
+* Features [0/1]
+  :PROPERTIES:
+  :COOKIE_DATA: todo recursive
+  :VISIBILITY: children
+  :END:
+** TODO Network
+   It would be really nice if I could connect instances across devices to
+   synchronize listening progress.
 * Components [0/0]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
