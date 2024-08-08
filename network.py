@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2024-08-07 18:28:22 krylon>
+# Time-stamp: <2024-08-08 18:33:25 krylon>
 #
 # /data/code/python/vox/network.py
 # created on 05. 08. 2024
@@ -17,9 +17,10 @@ vox.network
 """
 
 from socket import gethostname
+from threading import RLock
 from typing import Final
 
-from zeroconf import ServiceBrowser, ServiceListener, Zeroconf
+from zeroconf import IPVersion, ServiceInfo, ServiceListener, Zeroconf
 
 DefaultPort: Final[int] = 5281
 
@@ -28,12 +29,15 @@ class VoxListener(ServiceListener):
     """Represent."""
 
     def update_service(self, zc: Zeroconf, type_: str, name: str) -> None:
+        """Update a Service definition."""
         print(f"Service {name} updated")
 
     def remove_service(self, zc: Zeroconf, type_: str, name: str) -> None:
+        """Remove a Service definition."""
         print(f"Service {name} removed")
 
     def add_service(self, zc: Zeroconf, type_: str, name: str) -> None:
+        """Add a Service definition."""
         info = zc.get_service_info(type_, name)
         print(f"Service {name} added, service info: {info}")
 
@@ -44,24 +48,57 @@ class Network:
     __slots__ = [
         "hostname",
         "mdns",
+        "info",
+        "lock",
+        "active",
+        "peers",
     ]
 
     hostname: str
     mdns: Zeroconf
+    info: ServiceInfo
+    lock: RLock
+    active: bool
+    peers: dict
 
     def __init__(self) -> None:
         self.hostname = gethostname()
-        self.mdns = Zeroconf()
+        self.mdns = Zeroconf(ip_version=IPVersion.All)
+        self.lock = RLock()
+        self.active = False
+        self.peers = {}
+
+        self.info = ServiceInfo(
+            "_http._tcp.local.",
+            f"vox@{self.hostname}._http._tcp.local.",
+            port=DefaultPort,
+        )
+
+    def __enter__(self) -> None:
+        self.start()
+
+    def __exit__(self, ex_type, ex_val, traceback) -> None:
+        self.stop()
+
+    def start(self) -> None:
+        """Publish the service info."""
+        with self.lock:
+            self.active = True
+            self.mdns.register_service(self.info)
+
+    def stop(self) -> None:
+        """Un-publish the service info."""
+        with self.lock:
+            self.active = True
+            self.mdns.unregister_service(self.info)
+            self.mdns.close()
 
 
 if __name__ == '__main__':
-    zc = Zeroconf()
-    listener = VoxListener()
-    browser = ServiceBrowser(zc, "_http._tcp.local.", listener)
-    try:
+    nw = Network()
+
+    with nw:
         input("Press enter to quit.\n\n")
-    finally:
-        zc.close()
 
 # Local Variables: #
 # python-indent: 4 #
