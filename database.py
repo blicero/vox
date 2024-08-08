@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2024-08-05 21:09:52 krylon>
+# Time-stamp: <2024-08-08 18:16:59 krylon>
 #
 # /data/code/python/vox/database.py
 # created on 28. 10. 2023
@@ -29,7 +29,7 @@ import krylib
 from vox import common
 from vox.data import File, Folder, Program
 
-INIT_QUERIES: Final[list[str]] = [
+InitQueries: Final[list[str]] = [
     """
     CREATE TABLE folder (
         id		INTEGER PRIMARY KEY,
@@ -98,7 +98,7 @@ CREATE TABLE playlist_entry (
     "CREATE INDEX pe_fi_idx ON playlist_entry (file_id)",
 ]
 
-OPEN_LOCK: Final[threading.Lock] = threading.Lock()
+OpenLock: Final[threading.Lock] = threading.Lock()
 
 
 # pylint: disable-msg=C0103,R0904
@@ -292,7 +292,7 @@ class Database:
         self.path = path
         self.log = common.get_logger("database")
         self.log.debug("Open database at %s", path)
-        with OPEN_LOCK:
+        with OpenLock:
             exist: bool = krylib.fexist(path)
             self.db = sqlite3.connect(path)  # pylint: disable-msg=C0103
             self.db.isolation_level = None
@@ -307,7 +307,7 @@ class Database:
     def __create_db(self) -> None:
         """Initialize a freshly created database"""
         with self.db:
-            for query in INIT_QUERIES:
+            for query in InitQueries:
                 cur: sqlite3.Cursor = self.db.cursor()
                 cur.execute(query)
 
